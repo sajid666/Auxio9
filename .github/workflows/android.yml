@@ -2,9 +2,9 @@ name: Android Build
 
 on:
   push:
-    branches: []
+    branches: [tune-glass-insights]
   pull_request:
-    branches: []
+    branches: [tune-glass-insights]
 
 jobs:
   build:
