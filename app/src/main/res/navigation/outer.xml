@@ -16,6 +16,9 @@
         <action
             android:id="@+id/about"
             app:destination="@id/about_fragment" />
+        <action
+            android:id="@+id/insights"
+            app:destination="@id/insights_fragment" />
     </fragment>
     <fragment
         android:id="@+id/root_preferences_fragment"
@@ -99,6 +102,11 @@
         android:name="org.oxycblt.auxio.music.interpret.SeparatorsDialog"
         android:label="separators_dialog"
         tools:layout="@layout/dialog_separators" />
+
+    <fragment
+        android:id="@+id/insights_fragment"
+        android:name="org.oxycblt.auxio.playback.stats.InsightsFragment"
+        android:label="@string/lbl_insights" />
 
     <fragment
         android:id="@+id/about_fragment"
