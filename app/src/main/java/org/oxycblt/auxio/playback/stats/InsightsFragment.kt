@@ -20,6 +20,8 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.google.android.material.card.MaterialCardView
 import org.oxycblt.auxio.R
+import java.text.DateFormat
+import java.util.Date
 
 /** A local overview of listening history collected by the playback service. */
 class InsightsFragment : Fragment() {
@@ -37,7 +39,6 @@ class InsightsFragment : Fragment() {
         }
         content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, 0, 0, 0)
         }
         scroll.addView(content)
         renderStats()
@@ -52,8 +53,10 @@ class InsightsFragment : Fragment() {
     private fun renderStats() {
         content.removeAllViews()
         val tracker = PlaybackStatsTracker(requireContext())
-        val totalMs = tracker.totalListeningMs()
         val songs = tracker.mostPlayed(10)
+        val artists = tracker.mostPlayedArtists(5)
+        val albums = tracker.mostPlayedAlbums(5)
+        val history = tracker.recentHistory(20)
 
         content.addView(text("Listening insights", 28, true))
         content.addView(text(getString(R.string.lbl_stats_since), 14, false).apply {
@@ -61,19 +64,13 @@ class InsightsFragment : Fragment() {
             setPadding(0, dp(4), 0, dp(16))
         })
 
+        val totalMs = tracker.totalListeningMs()
         val hours = totalMs / 3_600_000L
         val minutes = (totalMs % 3_600_000L) / 60_000L
         val duration = when {
             hours > 0L -> "${hours}h ${minutes}m"
             minutes > 0L -> "${minutes}m"
             else -> "${totalMs / 1_000L}s"
-        }
-        val summary = MaterialCardView(requireContext()).apply {
-            radius = dp(24).toFloat()
-            cardElevation = 0f
-            strokeWidth = dp(1)
-            setCardBackgroundColor(resolveColor(com.google.android.material.R.attr.colorSurfaceContainerHigh))
-            setContentPadding(dp(20), dp(18), dp(20), dp(18))
         }
         val summaryContent = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
@@ -83,61 +80,123 @@ class InsightsFragment : Fragment() {
             setPadding(0, dp(4), 0, dp(2))
         })
         summaryContent.addView(text("Tracked on this device", 14, false).apply { alpha = 0.72f })
-        summary.addView(summaryContent)
-        content.addView(summary, marginParams(bottom = 24))
+        content.addView(card(summaryContent, high = true), marginParams(bottom = 24))
 
-        content.addView(text(getString(R.string.lbl_most_played), 21, true).apply {
-            setPadding(0, 0, 0, dp(10))
-        })
-
+        addSection("Most played tracks")
         if (songs.isEmpty()) {
-            val empty = MaterialCardView(requireContext()).apply {
-                radius = dp(20).toFloat()
-                cardElevation = 0f
-                strokeWidth = dp(1)
-                setCardBackgroundColor(resolveColor(com.google.android.material.R.attr.colorSurfaceContainer))
-                setContentPadding(dp(18), dp(18), dp(18), dp(18))
+            addEmptyState()
+        } else {
+            songs.forEachIndexed { index, song ->
+                val detail = LinearLayout(requireContext()).apply {
+                    orientation = LinearLayout.VERTICAL
+                }
+                detail.addView(text(song.title.ifBlank { "Unknown track" }, 16, true))
+                detail.addView(text(
+                    listOf(song.artist, song.album).filter { it.isNotBlank() }
+                        .joinToString(" · ").ifBlank { "Unknown artist" },
+                    13,
+                    false,
+                ).apply {
+                    alpha = 0.72f
+                    setPadding(0, dp(3), 0, dp(5))
+                })
+                detail.addView(text(
+                    "${song.plays} plays · ${song.listeningMs / 60_000L} min listened",
+                    12,
+                    false,
+                ).apply { alpha = 0.78f })
+                addRankedRow(index, detail)
             }
-            empty.addView(text(getString(R.string.lbl_no_stats), 15, false))
-            content.addView(empty, marginParams(bottom = 12))
-            return
         }
 
-        songs.forEachIndexed { index, song ->
-            val row = MaterialCardView(requireContext()).apply {
-                radius = dp(20).toFloat()
-                cardElevation = 0f
-                strokeWidth = dp(1)
-                setCardBackgroundColor(resolveColor(com.google.android.material.R.attr.colorSurfaceContainer))
-                setContentPadding(dp(14), dp(12), dp(14), dp(12))
+        addSection("Top artists")
+        if (artists.isEmpty()) {
+            addEmptyState()
+        } else {
+            artists.forEachIndexed { index, artist ->
+                addRankedRow(index, LinearLayout(requireContext()).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(text(artist.name, 16, true))
+                    addView(text("${artist.plays} plays · ${artist.listeningMs / 60_000L} min", 12, false))
+                })
             }
-            val line = LinearLayout(requireContext()).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
+        }
+
+        addSection("Top albums")
+        if (albums.isEmpty()) {
+            addEmptyState()
+        } else {
+            albums.forEachIndexed { index, album ->
+                addRankedRow(index, LinearLayout(requireContext()).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(text(album.name, 16, true))
+                    addView(text("${album.plays} plays · ${album.listeningMs / 60_000L} min", 12, false))
+                })
             }
-            val rank = text((index + 1).toString().padStart(2, '0'), 14, true).apply {
-                gravity = Gravity.CENTER
-                alpha = 0.72f
+        }
+
+        addSection("Recently played")
+        if (history.isEmpty()) {
+            addEmptyState()
+        } else {
+            val dateFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+            history.forEach { event ->
+                val details = LinearLayout(requireContext()).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(text(event.title.ifBlank { "Unknown track" }, 15, true))
+                    addView(text(
+                        listOf(event.artist, event.album).filter { it.isNotBlank() }
+                            .joinToString(" · ").ifBlank { "Unknown artist" },
+                        12,
+                        false,
+                    ).apply { alpha = 0.72f })
+                    addView(text(dateFormat.format(Date(event.timestampMs)), 11, false).apply {
+                        alpha = 0.65f
+                        setPadding(0, dp(3), 0, 0)
+                    })
+                }
+                content.addView(card(details), marginParams(bottom = 8))
             }
-            line.addView(rank, LinearLayout.LayoutParams(dp(34), ViewGroup.LayoutParams.WRAP_CONTENT))
-            val details = LinearLayout(requireContext()).apply {
-                orientation = LinearLayout.VERTICAL
-            }
-            details.addView(text(song.title.ifBlank { "Unknown track" }, 16, true))
-            val byline = listOf(song.artist, song.album).filter { it.isNotBlank() }.joinToString(" · ")
-            details.addView(text(byline.ifBlank { "Unknown artist" }, 13, false).apply {
-                alpha = 0.72f
-                setPadding(0, dp(3), 0, dp(5))
-            })
-            val listenedMinutes = song.listeningMs / 60_000L
-            details.addView(text("${song.plays} plays  ·  ${listenedMinutes} min listened", 12, false).apply {
-                alpha = 0.78f
-            })
-            line.addView(details, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            row.addView(line)
-            content.addView(row, marginParams(bottom = 8))
         }
     }
+
+    private fun addSection(title: String) {
+        content.addView(text(title, 21, true).apply {
+            setPadding(0, dp(12), 0, dp(10))
+        })
+    }
+
+    private fun addEmptyState() {
+        content.addView(card(text(getString(R.string.lbl_no_stats), 14, false)), marginParams(bottom = 8))
+    }
+
+    private fun addRankedRow(index: Int, details: View) {
+        val line = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        line.addView(text((index + 1).toString().padStart(2, '0'), 14, true).apply {
+            gravity = Gravity.CENTER
+            alpha = 0.72f
+        }, LinearLayout.LayoutParams(dp(34), ViewGroup.LayoutParams.WRAP_CONTENT))
+        line.addView(details, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        content.addView(card(line), marginParams(bottom = 8))
+    }
+
+    private fun card(child: View, high: Boolean = false) =
+        MaterialCardView(requireContext()).apply {
+            radius = dp(20).toFloat()
+            cardElevation = 0f
+            strokeWidth = dp(1)
+            val colorAttribute = if (high) {
+                com.google.android.material.R.attr.colorSurfaceContainerHigh
+            } else {
+                com.google.android.material.R.attr.colorSurfaceContainer
+            }
+            setCardBackgroundColor(resolveColor(colorAttribute))
+            setContentPadding(dp(14), dp(12), dp(14), dp(12))
+            addView(child)
+        }
 
     private fun text(value: String, sizeSp: Int, bold: Boolean): TextView =
         TextView(requireContext()).apply {
