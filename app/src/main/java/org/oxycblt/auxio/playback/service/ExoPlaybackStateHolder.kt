@@ -619,8 +619,8 @@ class ExoPlaybackStateHolder(
             .setMediaMetadata(
                 androidx.media3.common.MediaMetadata.Builder()
                     .setTitle(name.raw)
-                    .setArtist(artists.joinToString { it.name.raw })
-                    .setAlbumTitle(album.name.raw)
+                    .setArtist(artists.joinToString { artist -> (artist.name as? org.oxycblt.musikr.tag.Name.Known)?.raw ?: artist.name.toString() })
+                    .setAlbumTitle((album.name as? org.oxycblt.musikr.tag.Name.Known)?.raw ?: album.name.toString())
                     .build()
             )
             .build()
