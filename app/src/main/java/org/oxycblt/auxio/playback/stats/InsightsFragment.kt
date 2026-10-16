@@ -54,7 +54,7 @@ class InsightsFragment : Fragment() {
         val songs = tracker.mostPlayed(10)
         val artists = tracker.mostPlayedArtists(5)
 
-        content.addView(text("Listening insights", 28, true).apply { setTextColor(resolveColor(com.google.android.material.R.attr.colorPrimary)) })
+        content.addView(text("Listening insights", 28, true).apply { setTextColor(resolveColor(android.R.attr.colorAccent)) })
         content.addView(text(getString(R.string.lbl_stats_since), 14, false).apply {
             alpha = 0.72f
             setPadding(0, dp(4), 0, dp(16))
@@ -179,7 +179,7 @@ class InsightsFragment : Fragment() {
             }
             val surfaceColor = resolveColor(colorAttribute)
             // Glass-inspired translucent surfaces with a theme-colored outline.
-            setCardBackgroundColor(android.graphics.ColorUtils.setAlphaComponent(surfaceColor, if (high) 238 else 218))
+            setCardBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(surfaceColor, if (high) 238 else 218))
             strokeColor = android.graphics.ColorUtils.setAlphaComponent(
                 resolveColor(com.google.android.material.R.attr.colorPrimary),
                 if (high) 170 else 95,
