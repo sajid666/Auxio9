@@ -172,6 +172,12 @@
     <string name="lbl_wiki">Wiki</string>
     <string name="lbl_licenses">Licenses</string>
     <string name="lbl_library_counts">Library statistics</string>
+    <string name="lbl_insights">Listening insights</string>
+    <string name="lbl_listening_time">Listening time</string>
+    <string name="lbl_most_played">Most played</string>
+    <string name="lbl_no_stats">Your listening stats will appear here as you play music.</string>
+    <string name="lbl_plays">%1$d plays</string>
+    <string name="lbl_stats_since">Stats are collected locally from this installation onward.</string>
 
     <string name="lbl_selection">Selection</string>
 
