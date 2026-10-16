@@ -9,14 +9,15 @@
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/action_sort"
-        android:icon="@drawable/ic_sort_24"
-        android:title="@string/lbl_sort"
+        android:id="@+id/action_insights"
+        android:icon="@drawable/ic_insights_24"
+        android:title="@string/lbl_insights"
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/action_insights"
-        android:title="@string/lbl_insights"
+        android:id="@+id/action_sort"
+        android:icon="@drawable/ic_sort_24"
+        android:title="@string/lbl_sort"
         app:showAsAction="never" />
 
     <item
