@@ -104,8 +104,14 @@ class ExoPlaybackStateHolder(
         saveScope.launch {
             while (true) {
                 delay(1_000L)
-                if (player.isPlaying) {
-                    statsTracker.recordSecond(player.currentMediaItem)
+                // ExoPlayer must only be accessed from its application looper (the main thread).
+                val currentItem =
+                    withContext(Dispatchers.Main) {
+                        if (player.isPlaying) player.currentMediaItem else null
+                    }
+                // Keep the SharedPreferences update off the main thread.
+                if (currentItem != null) {
+                    statsTracker.recordSecond(currentItem)
                 }
             }
         }
