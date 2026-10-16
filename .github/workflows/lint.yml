@@ -25,7 +25,7 @@ jobs:
         cache: gradle
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-    - name: Check formatting with spotless
-      run: ./gradlew spotlessCheck
+    - name: Apply and check Kotlin formatting
+      run: ./gradlew spotlessApply spotlessCheck
     - name: Test musikr with Gradle
       run: ./gradlew musikr:testDebug
