@@ -565,6 +565,7 @@ class MainFragment :
             when (outer) {
                 is Outer.Settings -> MainFragmentDirections.preferences()
                 is Outer.About -> MainFragmentDirections.about()
+                is Outer.Insights -> MainFragmentDirections.insights()
                 null -> return
             }
         findNavController().navigateSafe(directions)
