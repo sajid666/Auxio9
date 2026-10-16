@@ -611,7 +611,19 @@ class ExoPlaybackStateHolder(
         currentSaveJob = saveScope.launch { block() }
     }
 
-    private fun Song.buildMediaItem() = MediaItem.Builder().setUri(uri).setTag(this).build()
+    private fun Song.buildMediaItem() =
+        MediaItem.Builder()
+            .setMediaId(uri.toString())
+            .setUri(uri)
+            .setTag(this)
+            .setMediaMetadata(
+                androidx.media3.common.MediaMetadata.Builder()
+                    .setTitle(name)
+                    .setArtist(artists.joinToString { it.name })
+                    .setAlbumTitle(album.name)
+                    .build()
+            )
+            .build()
 
     private val MediaItem.song: Song?
         get() = this.localConfiguration?.tag as? Song?
