@@ -272,10 +272,16 @@ constructor(
     fun showAbout() {
         showOuter.put(Outer.About)
     }
+
+    fun showInsights() {
+        showOuter.put(Outer.Insights)
+    }
 }
 
 sealed interface Outer {
     data object Settings : Outer
 
     data object About : Outer
+
+    data object Insights : Outer
 }
