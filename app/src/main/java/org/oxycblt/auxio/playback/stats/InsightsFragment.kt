@@ -39,13 +39,7 @@ class InsightsFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
             setPadding(0, 0, 0, 0)
         }
-        scroll.addView(
-            content,
-            ScrollView.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            ),
-        )
+        scroll.addView(content)
         renderStats()
         return scroll
     }
