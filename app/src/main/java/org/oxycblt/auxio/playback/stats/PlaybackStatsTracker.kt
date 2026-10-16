@@ -44,10 +44,50 @@ class PlaybackStatsTracker(context: Context) {
         item ?: return
         val id = trackId(item)
         if (id.isBlank()) return
+        val now = System.currentTimeMillis()
+        val today = java.time.LocalDate.now().toEpochDay()
+        val lastDay = preferences.getLong(KEY_LAST_LISTEN_DAY, -1L)
         val editor = preferences.edit()
         editor.putLong(KEY_TOTAL_MS, preferences.getLong(KEY_TOTAL_MS, 0L) + 1_000L)
         editor.putLong(key(id, "time"), preferences.getLong(key(id, "time"), 0L) + 1_000L)
+
+        if (today != lastDay) {
+            val yesterday = today - 1L
+            val streak = preferences.getLong(KEY_STREAK_DAYS, 0L)
+            editor.putLong(KEY_STREAK_DAYS, if (lastDay == yesterday) streak + 1L else 1L)
+            editor.putLong(KEY_LAST_LISTEN_DAY, today)
+        }
+
+        val previousTick = preferences.getLong(KEY_LAST_TICK_MS, 0L)
+        var sessionStart = preferences.getLong(KEY_SESSION_START_MS, 0L)
+        var sessionDuration = preferences.getLong(KEY_SESSION_DURATION_MS, 0L)
+        var completedDuration = preferences.getLong(KEY_COMPLETED_SESSION_MS, 0L)
+        var completedCount = preferences.getLong(KEY_COMPLETED_SESSION_COUNT, 0L)
+        if (previousTick > 0L && now - previousTick > SESSION_GAP_MS && sessionStart > 0L) {
+            completedDuration += sessionDuration
+            completedCount++
+            sessionStart = 0L
+            sessionDuration = 0L
+        }
+        if (sessionStart == 0L) sessionStart = now
+        sessionDuration += 1_000L
+        editor.putLong(KEY_LAST_TICK_MS, now)
+        editor.putLong(KEY_SESSION_START_MS, sessionStart)
+        editor.putLong(KEY_SESSION_DURATION_MS, sessionDuration)
+        editor.putLong(KEY_COMPLETED_SESSION_MS, completedDuration)
+        editor.putLong(KEY_COMPLETED_SESSION_COUNT, completedCount)
         editor.apply()
+    }
+
+    fun listeningStreakDays(): Long = preferences.getLong(KEY_STREAK_DAYS, 0L)
+
+    fun averageSessionMs(): Long {
+        val completedCount = preferences.getLong(KEY_COMPLETED_SESSION_COUNT, 0L)
+        val completedDuration = preferences.getLong(KEY_COMPLETED_SESSION_MS, 0L)
+        val activeDuration = preferences.getLong(KEY_SESSION_DURATION_MS, 0L)
+        val active = if (preferences.getLong(KEY_SESSION_START_MS, 0L) > 0L) 1L else 0L
+        val count = completedCount + active
+        return if (count == 0L) 0L else (completedDuration + activeDuration) / count
     }
 
     /** Count a play when a track starts, rather than on every progress tick. */
@@ -156,6 +196,14 @@ class PlaybackStatsTracker(context: Context) {
 
     private companion object {
         const val KEY_TOTAL_MS = "total_listening_ms"
+        const val KEY_LAST_LISTEN_DAY = "last_listen_day"
+        const val KEY_STREAK_DAYS = "streak_days"
+        const val KEY_LAST_TICK_MS = "last_tick_ms"
+        const val KEY_SESSION_START_MS = "session_start_ms"
+        const val KEY_SESSION_DURATION_MS = "session_duration_ms"
+        const val KEY_COMPLETED_SESSION_MS = "completed_session_ms"
+        const val KEY_COMPLETED_SESSION_COUNT = "completed_session_count"
+        const val SESSION_GAP_MS = 5 * 60 * 1000L
         const val TRACK_PREFIX = "track_"
         const val HISTORY_LIMIT = 100
     }
