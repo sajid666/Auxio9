@@ -4,6 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@drawable/bg_glass_surface"
+    android:paddingStart="@dimen/spacing_tiny"
+    android:paddingEnd="@dimen/spacing_tiny"
+    android:paddingTop="@dimen/spacing_tiny"
     tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout">
 
     <org.oxycblt.auxio.image.CoverView
