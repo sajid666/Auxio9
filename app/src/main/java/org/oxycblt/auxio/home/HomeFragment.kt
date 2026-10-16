@@ -203,6 +203,11 @@ class HomeFragment : SelectionFragment<FragmentHomeBinding>() {
                 homeModel.showAbout()
                 true
             }
+            R.id.action_insights -> {
+                L.d("Navigating to listening insights")
+                homeModel.showInsights()
+                true
+            }
 
             // Handle sort menu
             R.id.action_sort -> {
