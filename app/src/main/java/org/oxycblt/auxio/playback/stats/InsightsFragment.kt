@@ -20,8 +20,6 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.google.android.material.card.MaterialCardView
 import org.oxycblt.auxio.R
-import java.text.DateFormat
-import java.util.Date
 
 /** A local overview of listening history collected by the playback service. */
 class InsightsFragment : Fragment() {
@@ -55,8 +53,6 @@ class InsightsFragment : Fragment() {
         val tracker = PlaybackStatsTracker(requireContext())
         val songs = tracker.mostPlayed(10)
         val artists = tracker.mostPlayedArtists(5)
-        val albums = tracker.mostPlayedAlbums(5)
-        val history = tracker.recentHistory(20)
 
         content.addView(text("Listening insights", 28, true))
         content.addView(text(getString(R.string.lbl_stats_since), 14, false).apply {
@@ -122,42 +118,29 @@ class InsightsFragment : Fragment() {
             }
         }
 
-        addSection("Top albums")
-        if (albums.isEmpty()) {
-            addEmptyState()
-        } else {
-            albums.forEachIndexed { index, album ->
-                addRankedRow(index, LinearLayout(requireContext()).apply {
-                    orientation = LinearLayout.VERTICAL
-                    addView(text(album.name, 16, true))
-                    addView(text("${album.plays} plays · ${album.listeningMs / 60_000L} min", 12, false))
-                })
-            }
+        addSection("Listening streak")
+        val streakContent = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text("${tracker.listeningStreakDays()} days", 28, true))
+            addView(text("Consecutive days with music played", 13, false).apply { alpha = 0.72f })
         }
+        content.addView(card(streakContent), marginParams(bottom = 8))
 
-        addSection("Recently played")
-        if (history.isEmpty()) {
-            addEmptyState()
+        addSection("Average session")
+        val averageMs = tracker.averageSessionMs()
+        val averageMinutes = averageMs / 60_000L
+        val averageSeconds = (averageMs % 60_000L) / 1_000L
+        val averageLabel = if (averageMinutes > 0L) {
+            "${averageMinutes}m ${averageSeconds}s"
         } else {
-            val dateFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
-            history.forEach { event ->
-                val details = LinearLayout(requireContext()).apply {
-                    orientation = LinearLayout.VERTICAL
-                    addView(text(event.title.ifBlank { "Unknown track" }, 15, true))
-                    addView(text(
-                        listOf(event.artist, event.album).filter { it.isNotBlank() }
-                            .joinToString(" · ").ifBlank { "Unknown artist" },
-                        12,
-                        false,
-                    ).apply { alpha = 0.72f })
-                    addView(text(dateFormat.format(Date(event.timestampMs)), 11, false).apply {
-                        alpha = 0.65f
-                        setPadding(0, dp(3), 0, 0)
-                    })
-                }
-                content.addView(card(details), marginParams(bottom = 8))
-            }
+            "${averageSeconds}s"
         }
+        val averageContent = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text(averageLabel, 28, true))
+            addView(text("Average listening time per session", 13, false).apply { alpha = 0.72f })
+        }
+        content.addView(card(averageContent), marginParams(bottom = 8))
     }
 
     private fun addSection(title: String) {
