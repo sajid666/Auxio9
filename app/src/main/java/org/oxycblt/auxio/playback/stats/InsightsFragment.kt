@@ -73,7 +73,7 @@ class InsightsFragment : Fragment() {
         }
         summaryContent.addView(text("TOTAL LISTENING TIME", 12, true).apply { alpha = 0.75f })
         summaryContent.addView(text(duration, 36, true).apply {
-            setTextColor(resolveColor(com.google.android.material.R.attr.colorPrimary))
+            setTextColor(resolveColor(android.R.attr.colorAccent))
             setPadding(0, dp(4), 0, dp(2))
         })
         summaryContent.addView(text("Tracked on this device", 14, false).apply { alpha = 0.72f })
@@ -179,9 +179,9 @@ class InsightsFragment : Fragment() {
             }
             val surfaceColor = resolveColor(colorAttribute)
             // Glass-inspired translucent surfaces with a theme-colored outline.
-            setCardBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(surfaceColor, if (high) 238 else 218))
-            strokeColor = android.graphics.ColorUtils.setAlphaComponent(
-                resolveColor(com.google.android.material.R.attr.colorPrimary),
+            setCardBackgroundColor(withAlpha(surfaceColor, if (high) 238 else 218))
+            strokeColor = withAlpha(
+                resolveColor(android.R.attr.colorAccent),
                 if (high) 170 else 95,
             )
             setContentPadding(dp(14), dp(12), dp(14), dp(12))
@@ -195,6 +195,9 @@ class InsightsFragment : Fragment() {
             if (bold) setTypeface(typeface, Typeface.BOLD)
             setTextColor(resolveColor(com.google.android.material.R.attr.colorOnSurface))
         }
+
+    private fun withAlpha(color: Int, alpha: Int): Int =
+        (color and 0x00FFFFFF) or (alpha.coerceIn(0, 255) shl 24)
 
     private fun resolveColor(attribute: Int): Int {
         val value = android.util.TypedValue()
