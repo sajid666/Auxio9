@@ -514,7 +514,15 @@ class ExoPlaybackStateHolder(
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         super.onMediaItemTransition(mediaItem, reason)
-        if (mediaItem != null && reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) {
+        // Replacing/restoring a playlist can emit a transition for its first item even
+        // when the user actually chose another song. Only count genuine item changes after
+        // playback has been requested; ignore playlist setup and repeat callbacks.
+        if (
+            mediaItem != null &&
+                reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
+                reason != Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED &&
+                player.playWhenReady
+        ) {
             statsTracker.recordPlay(mediaItem)
         }
 
