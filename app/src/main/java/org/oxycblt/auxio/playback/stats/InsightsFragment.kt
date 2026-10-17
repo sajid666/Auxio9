@@ -14,11 +14,11 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
@@ -211,7 +211,10 @@ class InsightsFragment : Fragment() {
             gravity = Gravity.CENTER
             alpha = 0.72f
         }, LinearLayout.LayoutParams(dp(34), ViewGroup.LayoutParams.WRAP_CONTENT))
-        line.addView(details, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        line.addView(details, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        ))
         content.addView(card(line), marginParams(bottom = 8).apply {
             marginStart = dp(8)
             marginEnd = dp(8)
@@ -243,6 +246,9 @@ class InsightsFragment : Fragment() {
         TextView(requireContext()).apply {
             text = value
             textSize = sizeSp.toFloat()
+            maxWidth = (resources.displayMetrics.widthPixels / resources.displayMetrics.density).toInt().let {
+                dp((it - 80).coerceAtLeast(180))
+            }
             if (bold) setTypeface(typeface, Typeface.BOLD)
             setTextColor(resolveColor(com.google.android.material.R.attr.colorOnSurface))
         }
@@ -262,9 +268,13 @@ class InsightsFragment : Fragment() {
 
     private fun marginParams(bottom: Int): LinearLayout.LayoutParams =
         LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
-        ).apply { bottomMargin = dp(bottom) }
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        ).apply {
+            bottomMargin = dp(bottom)
+            marginStart = dp(8)
+            marginEnd = dp(8)
+        }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }
