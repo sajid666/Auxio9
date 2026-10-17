@@ -56,7 +56,10 @@ class PlaybackStatsTracker(
         editor.putLong(KEY_TOTAL_MS, preferences.getLong(KEY_TOTAL_MS, 0L) + 1_000L)
         editor.putLong(
             key(id, "time"),
-            preferences.getLong(key(id, "time"), preferences.getLong(trackKey(id, "time"), 0L)) + 1_000L,
+            preferences.getLong(
+                key(id, "time"),
+                preferences.getLong(trackKey(id, "time"), 0L),
+            ) + 1_000L,
         )
 
         if (today != lastDay) {
