@@ -54,7 +54,7 @@ class PlaybackStatsTracker(
         val lastDay = preferences.getLong(KEY_LAST_LISTEN_DAY, -1L)
         val editor = preferences.edit()
         editor.putLong(KEY_TOTAL_MS, preferences.getLong(KEY_TOTAL_MS, 0L) + 1_000L)
-        editor.putLong(trackKey(id, "time"), preferences.getLong(trackKey(id, "time"), preferences.getLong(key(id, "time"), 0L)) + 1_000L)
+        editor.putLong(key(id, "time"), preferences.getLong(key(id, "time"), preferences.getLong(trackKey(id, "time"), 0L)) + 1_000L)
 
         if (today != lastDay) {
             val yesterday = today - 1L
@@ -172,9 +172,10 @@ class PlaybackStatsTracker(
         ).take(limit)
     }
 
-    fun mostPlayedArtists(limit: Int = 5): List<TrackedGroup> = groupedBy(limit) { it.artist }
+    fun mostPlayedArtists(limit: Int = 5): List<TrackedGroup> =
+        groupedBy(limit) { it.artist.split(",").map(String::trim) }
 
-    fun mostPlayedAlbums(limit: Int = 5): List<TrackedGroup> = groupedBy(limit) { it.album }
+    fun mostPlayedAlbums(limit: Int = 5): List<TrackedGroup> = groupedBy(limit) { listOf(it.album) }
 
     fun recentHistory(limit: Int = 20): List<ListeningEvent> =
         (0 until HISTORY_LIMIT).mapNotNull { index ->
@@ -219,18 +220,22 @@ class PlaybackStatsTracker(
             .apply()
     }
 
-    private fun groupedBy(limit: Int, name: (TrackedSong) -> String): List<TrackedGroup> {
+    private fun groupedBy(limit: Int, names: (TrackedSong) -> List<String>): List<TrackedGroup> {
         if (limit <= 0) return emptyList()
         return mostPlayed(Int.MAX_VALUE)
-            .filter { name(it).isNotBlank() }
-            .groupBy(name)
+            .flatMap { song ->
+                names(song).map(String::trim).filter(String::isNotBlank).distinct().map { it to song }
+            }
+            .groupBy({ it.first }, { it.second })
             .map { (groupName, songs) ->
                 TrackedGroup(
                     name = groupName,
                     plays = songs.sumOf { it.plays },
                     listeningMs = songs.sumOf { it.listeningMs },
                 )
-            }.sortedByDescending { it.plays }.take(limit)
+            }.sortedWith(
+                compareByDescending<TrackedGroup> { it.plays }.thenBy { it.name.lowercase() }
+            ).take(limit)
     }
 
     private fun trackId(item: MediaItem): String =
