@@ -54,7 +54,7 @@ class PlaybackStatsTracker(
         val lastDay = preferences.getLong(KEY_LAST_LISTEN_DAY, -1L)
         val editor = preferences.edit()
         editor.putLong(KEY_TOTAL_MS, preferences.getLong(KEY_TOTAL_MS, 0L) + 1_000L)
-        editor.putLong(key(id, "time"), preferences.getLong(key(id, "time"), 0L) + 1_000L)
+        editor.putLong(trackKey(id, "time"), preferences.getLong(trackKey(id, "time"), preferences.getLong(key(id, "time"), 0L)) + 1_000L)
 
         if (today != lastDay) {
             val yesterday = today - 1L
