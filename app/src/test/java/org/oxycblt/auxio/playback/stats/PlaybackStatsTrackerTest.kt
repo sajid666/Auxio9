@@ -111,6 +111,32 @@ class PlaybackStatsTrackerTest {
         assertEquals("2 days", formatStreakDays(2L))
     }
 
+    @Test
+    fun playCountLabelUsesSingularOnlyForOnePlay() {
+        assertEquals("0 plays", formatPlayCount(0L))
+        assertEquals("1 play", formatPlayCount(1L))
+        assertEquals("2 plays", formatPlayCount(2L))
+    }
+
+    @Test
+    fun multiArtistTracksCreditEachArtistIndividually() {
+        tracker.recordPlay(mediaItem("song-1", "Artist A, Artist B"))
+        tracker.recordPlay(mediaItem("song-2", "Artist A"))
+
+        val artists = tracker.mostPlayedArtists(3)
+        assertEquals(listOf("Artist A", "Artist B"), artists.take(2).map { it.name })
+        assertEquals(listOf(2L, 1L), artists.take(2).map { it.plays })
+    }
+
+    @Test
+    fun repeatedPlayEventsIncrementTheTrackCount() {
+        val song = mediaItem("same-song")
+        tracker.recordPlay(song)
+        tracker.recordPlay(song)
+
+        assertEquals(2L, tracker.mostPlayed(1).single().plays)
+    }
+
     private fun mediaItem(id: String, artist: String = "Test Artist") =
         MediaItem.Builder()
             .setMediaId(id)
