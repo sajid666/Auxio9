@@ -264,6 +264,7 @@ class ExoPlaybackStateHolder(
     }
 
     override fun newPlayback(command: PlaybackCommand) {
+        lastRecordedPlayId = null
         parent = command.parent
         player.shuffleModeEnabled = command.shuffled
         player.setMediaItems(command.queue.map { it.buildMediaItem() })
@@ -438,6 +439,10 @@ class ExoPlaybackStateHolder(
                 player.shuffleModeEnabled = false
             }
             player.seekTo(rawQueue.heapIndex, C.TIME_UNSET)
+            player.currentMediaItem?.let { restoredItem ->
+                lastRecordedPlayId =
+                    restoredItem.mediaId.ifBlank { restoredItem.mediaMetadata.title?.toString().orEmpty() }
+            }
             player.prepare()
             player.pause()
             sendNewPlaybackEvent = true
@@ -508,6 +513,7 @@ class ExoPlaybackStateHolder(
         super.onPlaybackStateChanged(playbackState)
 
         if (playbackState == Player.STATE_ENDED && player.repeatMode == Player.REPEAT_MODE_OFF) {
+            lastRecordedPlayId = null
             goto(0)
             player.pause()
         }
@@ -529,7 +535,11 @@ class ExoPlaybackStateHolder(
         } else if (player.isPlaying) {
             // A transition during active playback starts the new track. Transitions during
             // queue setup or while paused are counted when playback actually begins.
-            recordCurrentPlayIfNeeded(force = reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT)
+            recordCurrentPlayIfNeeded(
+                force =
+                    reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT ||
+                        reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO
+            )
         }
 
         if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
