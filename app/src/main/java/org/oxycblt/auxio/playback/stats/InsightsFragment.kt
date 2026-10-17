@@ -14,6 +14,8 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -49,6 +51,11 @@ class InsightsFragment : Fragment() {
         val scroll = ScrollView(context).apply {
             clipToPadding = false
             setPadding(dp(16), dp(12), dp(16), dp(28))
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(scroll) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(dp(16), systemBars.top + dp(12), dp(16), dp(28))
+            insets
         }
         content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -121,7 +128,31 @@ class InsightsFragment : Fragment() {
             setPadding(0, dp(4), 0, dp(2))
         })
         summaryContent.addView(text("Tracked on this device", 14, false).apply { alpha = 0.72f })
-        content.addView(card(summaryContent, high = true), marginParams(bottom = 24))
+        content.addView(card(summaryContent, high = true), marginParams(bottom = 12))
+
+        addSection("Listening streak")
+        val streakContent = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text(formatStreakDays(data.listeningStreakDays), 28, true))
+            addView(text("Consecutive days with music played", 13, false).apply { alpha = 0.72f })
+        }
+        content.addView(card(streakContent), marginParams(bottom = 8))
+
+        addSection("Average session")
+        val averageMs = data.averageSessionMs
+        val averageMinutes = averageMs / 60_000L
+        val averageSeconds = (averageMs % 60_000L) / 1_000L
+        val averageLabel = if (averageMinutes > 0L) {
+            "${averageMinutes}m ${averageSeconds}s"
+        } else {
+            "${averageSeconds}s"
+        }
+        val averageContent = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text(averageLabel, 28, true))
+            addView(text("Average listening time per session", 13, false).apply { alpha = 0.72f })
+        }
+        content.addView(card(averageContent), marginParams(bottom = 8))
 
         addSection("Most played tracks")
         if (songs.isEmpty()) {
@@ -159,29 +190,6 @@ class InsightsFragment : Fragment() {
             }
         }
 
-        addSection("Listening streak")
-        val streakContent = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(text(formatStreakDays(data.listeningStreakDays), 28, true))
-            addView(text("Consecutive days with music played", 13, false).apply { alpha = 0.72f })
-        }
-        content.addView(card(streakContent), marginParams(bottom = 8))
-
-        addSection("Average session")
-        val averageMs = data.averageSessionMs
-        val averageMinutes = averageMs / 60_000L
-        val averageSeconds = (averageMs % 60_000L) / 1_000L
-        val averageLabel = if (averageMinutes > 0L) {
-            "${averageMinutes}m ${averageSeconds}s"
-        } else {
-            "${averageSeconds}s"
-        }
-        val averageContent = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(text(averageLabel, 28, true))
-            addView(text("Average listening time per session", 13, false).apply { alpha = 0.72f })
-        }
-        content.addView(card(averageContent), marginParams(bottom = 8))
     }
 
     private fun addSection(title: String) {
@@ -204,7 +212,10 @@ class InsightsFragment : Fragment() {
             alpha = 0.72f
         }, LinearLayout.LayoutParams(dp(34), ViewGroup.LayoutParams.WRAP_CONTENT))
         line.addView(details, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        content.addView(card(line), marginParams(bottom = 8))
+        content.addView(card(line), marginParams(bottom = 8).apply {
+            marginStart = dp(8)
+            marginEnd = dp(8)
+        })
     }
 
     private fun card(child: View, high: Boolean = false) =
