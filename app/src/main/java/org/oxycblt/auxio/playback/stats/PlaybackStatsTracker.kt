@@ -54,7 +54,10 @@ class PlaybackStatsTracker(
         val lastDay = preferences.getLong(KEY_LAST_LISTEN_DAY, -1L)
         val editor = preferences.edit()
         editor.putLong(KEY_TOTAL_MS, preferences.getLong(KEY_TOTAL_MS, 0L) + 1_000L)
-        editor.putLong(key(id, "time"), preferences.getLong(key(id, "time"), preferences.getLong(trackKey(id, "time"), 0L)) + 1_000L)
+        editor.putLong(
+            key(id, "time"),
+            preferences.getLong(key(id, "time"), preferences.getLong(trackKey(id, "time"), 0L)) + 1_000L,
+        )
 
         if (today != lastDay) {
             val yesterday = today - 1L
@@ -173,7 +176,7 @@ class PlaybackStatsTracker(
     }
 
     fun mostPlayedArtists(limit: Int = 5): List<TrackedGroup> =
-        groupedBy(limit) { it.artist.split(",").map(String::trim) }
+        groupedBy(limit) { it.artist.split(",").map { artist -> artist.trim() } }
 
     fun mostPlayedAlbums(limit: Int = 5): List<TrackedGroup> = groupedBy(limit) { listOf(it.album) }
 
@@ -224,7 +227,11 @@ class PlaybackStatsTracker(
         if (limit <= 0) return emptyList()
         return mostPlayed(Int.MAX_VALUE)
             .flatMap { song ->
-                names(song).map(String::trim).filter(String::isNotBlank).distinct().map { it to song }
+                names(song)
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+                    .distinct()
+                    .map { it to song }
             }
             .groupBy({ it.first }, { it.second })
             .map { (groupName, songs) ->
