@@ -82,8 +82,8 @@ class InsightsFragment : Fragment() {
                     withContext(Dispatchers.Default) {
                         val tracker = PlaybackStatsTracker(appContext)
                         InsightsData(
-                            songs = tracker.mostPlayed(10),
-                            artists = tracker.mostPlayedArtists(5),
+                            songs = tracker.mostPlayed(3),
+                            artists = tracker.mostPlayedArtists(3),
                             totalListeningMs = tracker.totalListeningMs(),
                             listeningStreakDays = tracker.listeningStreakDays(),
                             averageSessionMs = tracker.averageSessionMs(),
@@ -166,7 +166,7 @@ class InsightsFragment : Fragment() {
         addSection("Listening streak")
         val streakContent = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            addView(text("${data.listeningStreakDays} days", 28, true))
+            addView(text(formatStreakDays(data.listeningStreakDays), 28, true))
             addView(text("Consecutive days with music played", 13, false).apply { alpha = 0.72f })
         }
         content.addView(card(streakContent), marginParams(bottom = 8))
@@ -261,3 +261,7 @@ class InsightsFragment : Fragment() {
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }
+
+/** Format a listening streak with correct singular/plural wording. */
+internal fun formatStreakDays(days: Long): String =
+    if (days == 1L) "1 day" else "$days days"

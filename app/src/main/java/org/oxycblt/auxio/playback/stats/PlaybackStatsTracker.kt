@@ -11,6 +11,7 @@ package org.oxycblt.auxio.playback.stats
 
 import android.content.Context
 import androidx.media3.common.MediaItem
+import java.time.LocalDate
 import org.json.JSONObject
 
 /** A locally tracked song summary. */
@@ -36,7 +37,11 @@ data class ListeningEvent(
 )
 
 /** Local, install-forward listening statistics stored on this device. */
-class PlaybackStatsTracker(context: Context) {
+class PlaybackStatsTracker(
+    context: Context,
+    private val currentTimeMs: () -> Long = System::currentTimeMillis,
+    private val currentEpochDay: () -> Long = { LocalDate.now().toEpochDay() },
+) {
     private val preferences =
         context.applicationContext.getSharedPreferences("listening_stats", Context.MODE_PRIVATE)
 
@@ -44,8 +49,8 @@ class PlaybackStatsTracker(context: Context) {
         item ?: return
         val id = trackId(item)
         if (id.isBlank()) return
-        val now = System.currentTimeMillis()
-        val today = java.time.LocalDate.now().toEpochDay()
+        val now = currentTimeMs()
+        val today = currentEpochDay()
         val lastDay = preferences.getLong(KEY_LAST_LISTEN_DAY, -1L)
         val editor = preferences.edit()
         editor.putLong(KEY_TOTAL_MS, preferences.getLong(KEY_TOTAL_MS, 0L) + 1_000L)
@@ -63,7 +68,12 @@ class PlaybackStatsTracker(context: Context) {
         var sessionDuration = preferences.getLong(KEY_SESSION_DURATION_MS, 0L)
         var completedDuration = preferences.getLong(KEY_COMPLETED_SESSION_MS, 0L)
         var completedCount = preferences.getLong(KEY_COMPLETED_SESSION_COUNT, 0L)
-        if (previousTick > 0L && now - previousTick > SESSION_GAP_MS && sessionStart > 0L) {
+        if (
+            previousTick > 0L &&
+                now > previousTick &&
+                now - previousTick > SESSION_GAP_MS &&
+                sessionStart > 0L
+        ) {
             completedDuration += sessionDuration
             completedCount++
             sessionStart = 0L
@@ -79,9 +89,19 @@ class PlaybackStatsTracker(context: Context) {
         editor.apply()
     }
 
-    fun listeningStreakDays(): Long = preferences.getLong(KEY_STREAK_DAYS, 0L)
+    /** Return zero when the last listening day is too old to be part of the current streak. */
+    fun listeningStreakDays(): Long {
+        val today = currentEpochDay()
+        val lastListenDay = preferences.getLong(KEY_LAST_LISTEN_DAY, -1L)
+        if (lastListenDay != today && lastListenDay != today - 1L) {
+            return 0L
+        }
+        return preferences.getLong(KEY_STREAK_DAYS, 0L)
+    }
 
     fun averageSessionMs(): Long {
+        finishSessionIfIdle(currentTimeMs())
+
         val completedCount = preferences.getLong(KEY_COMPLETED_SESSION_COUNT, 0L)
         val completedDuration = preferences.getLong(KEY_COMPLETED_SESSION_MS, 0L)
         val activeDuration = preferences.getLong(KEY_SESSION_DURATION_MS, 0L)
@@ -99,7 +119,7 @@ class PlaybackStatsTracker(context: Context) {
         val title = metadata.title?.toString().orEmpty()
         val artist = metadata.artist?.toString().orEmpty()
         val album = metadata.albumTitle?.toString().orEmpty()
-        val now = System.currentTimeMillis()
+        val now = currentTimeMs()
         val editor =
             preferences.edit()
                 .putLong(key(id, "plays"), preferences.getLong(key(id, "plays"), 0L) + 1L)
@@ -170,6 +190,34 @@ class PlaybackStatsTracker(context: Context) {
                 }.getOrNull()
             }
         }.take(limit.coerceAtLeast(0))
+
+    /**
+     * Finalize a session after the last playback tick has been idle longer than the session gap.
+     * This also runs when Insights is opened after playback has already gone idle.
+     */
+    private fun finishSessionIfIdle(now: Long) {
+        val lastTick = preferences.getLong(KEY_LAST_TICK_MS, 0L)
+        val sessionStart = preferences.getLong(KEY_SESSION_START_MS, 0L)
+        if (
+            lastTick <= 0L ||
+                sessionStart <= 0L ||
+                now <= lastTick ||
+                now - lastTick <= SESSION_GAP_MS
+        ) {
+            return
+        }
+
+        val completedDuration = preferences.getLong(KEY_COMPLETED_SESSION_MS, 0L)
+        val completedCount = preferences.getLong(KEY_COMPLETED_SESSION_COUNT, 0L)
+        val sessionDuration = preferences.getLong(KEY_SESSION_DURATION_MS, 0L)
+        preferences.edit()
+            .putLong(KEY_COMPLETED_SESSION_MS, completedDuration + sessionDuration)
+            .putLong(KEY_COMPLETED_SESSION_COUNT, completedCount + 1L)
+            .putLong(KEY_SESSION_START_MS, 0L)
+            .putLong(KEY_SESSION_DURATION_MS, 0L)
+            .putLong(KEY_LAST_TICK_MS, 0L)
+            .apply()
+    }
 
     private fun groupedBy(limit: Int, name: (TrackedSong) -> String): List<TrackedGroup> {
         if (limit <= 0) return emptyList()
