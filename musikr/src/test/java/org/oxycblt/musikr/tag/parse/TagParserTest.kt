@@ -120,6 +120,9 @@ class TagParserTest {
             createTestMetadata(
                 id3v2Tags =
                     mapOf(
+                        // Include an artist name so this test exercises artist ID parsing,
+                        // not the separate composer fallback path.
+                        "TPE1" to listOf("Test Artist"),
                         "TXXX:MUSICBRAINZ RELEASE TRACK ID" to listOf("track-id-123"),
                         "TXXX:MUSICBRAINZ ALBUM ID" to listOf("album-id-456"),
                         "TXXX:MUSICBRAINZ ARTIST ID" to listOf("artist-id-789"),
