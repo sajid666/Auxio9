@@ -141,11 +141,7 @@ class InsightsFragment : Fragment() {
                     alpha = 0.72f
                     setPadding(0, dp(3), 0, dp(5))
                 })
-                detail.addView(text(
-                    "${song.plays} plays · ${song.listeningMs / 60_000L} min listened",
-                    12,
-                    false,
-                ).apply { alpha = 0.78f })
+                detail.addView(text("${song.plays} plays", 12, false).apply { alpha = 0.78f })
                 addRankedRow(index, detail)
             }
         }
@@ -158,7 +154,7 @@ class InsightsFragment : Fragment() {
                 addRankedRow(index, LinearLayout(requireContext()).apply {
                     orientation = LinearLayout.VERTICAL
                     addView(text(artist.name, 16, true))
-                    addView(text("${artist.plays} plays · ${artist.listeningMs / 60_000L} min", 12, false))
+                    addView(text("${artist.plays} plays", 12, false))
                 })
             }
         }
