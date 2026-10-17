@@ -441,7 +441,9 @@ class ExoPlaybackStateHolder(
             player.seekTo(rawQueue.heapIndex, C.TIME_UNSET)
             player.currentMediaItem?.let { restoredItem ->
                 lastRecordedPlayId =
-                    restoredItem.mediaId.ifBlank { restoredItem.mediaMetadata.title?.toString().orEmpty() }
+                    restoredItem.mediaId.ifBlank {
+                        restoredItem.mediaMetadata.title?.toString().orEmpty()
+                    }
             }
             player.prepare()
             player.pause()
