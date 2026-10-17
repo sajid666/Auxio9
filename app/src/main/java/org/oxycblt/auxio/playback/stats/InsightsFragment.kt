@@ -141,7 +141,7 @@ class InsightsFragment : Fragment() {
                     alpha = 0.72f
                     setPadding(0, dp(3), 0, dp(5))
                 })
-                detail.addView(text("${song.plays} plays", 12, false).apply { alpha = 0.78f })
+                detail.addView(text(formatPlayCount(song.plays), 12, false).apply { alpha = 0.78f })
                 addRankedRow(index, detail)
             }
         }
@@ -154,7 +154,7 @@ class InsightsFragment : Fragment() {
                 addRankedRow(index, LinearLayout(requireContext()).apply {
                     orientation = LinearLayout.VERTICAL
                     addView(text(artist.name, 16, true))
-                    addView(text("${artist.plays} plays", 12, false))
+                    addView(text(formatPlayCount(artist.plays), 12, false))
                 })
             }
         }
@@ -261,3 +261,7 @@ class InsightsFragment : Fragment() {
 /** Format a listening streak with correct singular/plural wording. */
 internal fun formatStreakDays(days: Long): String =
     if (days == 1L) "1 day" else "$days days"
+
+/** Format a play count without the incorrect singular "plays" label. */
+internal fun formatPlayCount(plays: Long): String =
+    if (plays == 1L) "1 play" else "$plays plays"
