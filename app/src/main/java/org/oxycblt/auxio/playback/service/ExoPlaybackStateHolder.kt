@@ -90,6 +90,7 @@ class ExoPlaybackStateHolder(
     private var currentSaveJob: Job? = null
     private var openAudioEffectSession = false
     private val statsTracker = PlaybackStatsTracker(context)
+    private var lastRecordedPlayId: String? = null
 
     var sessionOngoing = false
         private set
@@ -512,24 +513,37 @@ class ExoPlaybackStateHolder(
         }
     }
 
+    override fun onIsPlayingChanged(isPlaying: Boolean) {
+        super.onIsPlayingChanged(isPlaying)
+        if (isPlaying) {
+            // Count only after playback actually begins, not when a playlist is merely loaded
+            // or a track is selected while paused.
+            recordCurrentPlayIfNeeded()
+        }
+    }
+
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         super.onMediaItemTransition(mediaItem, reason)
-        // Replacing/restoring a playlist can emit a transition for its first item even
-        // when the user actually chose another song. Only count genuine item changes after
-        // playback has been requested; ignore playlist setup and repeat callbacks.
-        if (
-            mediaItem != null &&
-                reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
-                reason != Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED &&
-                player.playWhenReady
-        ) {
-            statsTracker.recordPlay(mediaItem)
+        if (mediaItem == null) {
+            lastRecordedPlayId = null
+        } else if (player.isPlaying) {
+            // A transition during active playback starts the new track. Transitions during
+            // queue setup or while paused are counted when playback actually begins.
+            recordCurrentPlayIfNeeded(force = reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT)
         }
 
         if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
             playbackManager.ack(this, StateAck.IndexMoved)
             deferSave()
         }
+    }
+
+    private fun recordCurrentPlayIfNeeded(force: Boolean = false) {
+        val item = player.currentMediaItem ?: return
+        val id = item.mediaId.ifBlank { item.mediaMetadata.title?.toString().orEmpty() }
+        if (id.isBlank() || (!force && id == lastRecordedPlayId)) return
+        statsTracker.recordPlay(item)
+        lastRecordedPlayId = id
     }
 
     override fun onEvents(player: Player, events: Player.Events) {
