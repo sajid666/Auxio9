@@ -77,8 +77,32 @@ class InsightsBackupTest {
 
     @Test
     fun restoreRejectsUnknownBackupFormat() {
-        val result = runCatching { InsightsBackup.restore(context, """{"format":"other"}""") }
+        val result = runCatching { InsightsBackup.restore(context, """{"format":"other"}""")
 
         assertFalse(result.isSuccess)
+    }
+
+    @Test
+    fun malformedEntryDoesNotClearExistingLocalStatistics() {
+        preferences.edit()
+            .putLong("total_listening_ms", 25_000L)
+            .putString("history_0", """{"title":"Keep me"}""")
+            .putLong("backup_data_updated_at", 1_700_000_000_000L)
+            .commit()
+        val malformedBackup = """{
+            "format":"auxio-insights-backup",
+            "formatVersion":1,
+            "dataUpdatedAt":1700000000000,
+            "data":{
+                "total_listening_ms":{"type":"long","value":1000},
+                "broken":{"type":"unsupported","value":true}
+            }
+        }"""
+
+        val result = runCatching { InsightsBackup.restore(context, malformedBackup) }
+
+        assertFalse(result.isSuccess)
+        assertEquals(25_000L, preferences.getLong("total_listening_ms", 0L))
+        assertEquals("""{"title":"Keep me"}""", preferences.getString("history_0", null))
     }
 }
