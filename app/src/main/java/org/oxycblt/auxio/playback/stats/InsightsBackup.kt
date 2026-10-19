@@ -63,7 +63,65 @@ internal object InsightsBackup {
         }
         val values = root.optJSONObject("data")
             ?: throw IllegalArgumentException("The backup does not contain Insights data.")
-        val incomingUpdatedAt = root.optLong("dataUpdatedAt", 0L)
+        val timestampValue = root.opt("dataUpdatedAt")
+        require(timestampValue is Number) { "The backup has an invalid data timestamp." }
+        val incomingUpdatedAt = timestampValue.toLong()
+        require(incomingUpdatedAt >= 0L && timestampValue.toDouble() == incomingUpdatedAt.toDouble()) {
+            "The backup has an invalid data timestamp."
+        }
+
+        // Validate and decode the entire payload before touching local preferences. A malformed
+        // entry must never cause a partial restore or clear otherwise recoverable statistics.
+        val restoredValues = mutableMapOf<String, Any>()
+        val keys = values.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            require(key.isNotBlank()) { "The backup contains an invalid preference key." }
+            val entry = values.optJSONObject(key)
+                ?: throw IllegalArgumentException("The backup contains an invalid data entry.")
+            val value = entry.opt("value")
+            val decoded: Any = when (entry.optString("type")) {
+                "string" -> value as? String
+                    ?: throw IllegalArgumentException("The backup contains an invalid text value.")
+                "boolean" -> value as? Boolean
+                    ?: throw IllegalArgumentException("The backup contains an invalid boolean value.")
+                "int" -> {
+                    val number = value as? Number
+                        ?: throw IllegalArgumentException("The backup contains an invalid integer value.")
+                    val numericValue = number.toDouble()
+                    require(numericValue.isFinite() &&
+                        numericValue % 1.0 == 0.0 &&
+                        numericValue >= Int.MIN_VALUE &&
+                        numericValue <= Int.MAX_VALUE
+                    ) { "The backup contains an invalid integer value." }
+                    numericValue.toInt()
+                }
+                "long" -> {
+                    val number = value as? Number
+                        ?: throw IllegalArgumentException("The backup contains an invalid whole-number value.")
+                    val numericValue = number.toDouble()
+                    require(numericValue.isFinite() &&
+                        numericValue % 1.0 == 0.0 &&
+                        numericValue >= Long.MIN_VALUE.toDouble() &&
+                        numericValue < Long.MAX_VALUE.toDouble()
+                    ) { "The backup contains an invalid whole-number value." }
+                    number.toLong()
+                }
+                "float" -> {
+                    val number = value as? Number
+                        ?: throw IllegalArgumentException("The backup contains an invalid decimal value.")
+                    val numericValue = number.toDouble()
+                    require(numericValue.isFinite() &&
+                        numericValue >= -Float.MAX_VALUE &&
+                        numericValue <= Float.MAX_VALUE
+                    ) { "The backup contains an invalid decimal value." }
+                    numericValue.toFloat()
+                }
+                else -> throw IllegalArgumentException("The backup contains an unsupported data type.")
+            }
+            restoredValues[key] = decoded
+        }
+
         val preferences = preferences(context)
         val localUpdatedAt = latestLocalUpdate(preferences)
         require(incomingUpdatedAt >= localUpdatedAt) {
@@ -71,16 +129,13 @@ internal object InsightsBackup {
         }
 
         val editor = preferences.edit().clear()
-        val keys = values.keys()
-        while (keys.hasNext()) {
-            val key = keys.next()
-            val entry = values.optJSONObject(key) ?: continue
-            when (entry.optString("type")) {
-                "string" -> editor.putString(key, entry.optString("value"))
-                "boolean" -> editor.putBoolean(key, entry.optBoolean("value"))
-                "int" -> editor.putInt(key, entry.optInt("value"))
-                "long" -> editor.putLong(key, entry.optLong("value"))
-                "float" -> editor.putFloat(key, entry.optDouble("value").toFloat())
+        restoredValues.forEach { (key, value) ->
+            when (value) {
+                is String -> editor.putString(key, value)
+                is Boolean -> editor.putBoolean(key, value)
+                is Int -> editor.putInt(key, value)
+                is Long -> editor.putLong(key, value)
+                is Float -> editor.putFloat(key, value)
             }
         }
         editor.putLong(KEY_DATA_UPDATED_AT, incomingUpdatedAt)
