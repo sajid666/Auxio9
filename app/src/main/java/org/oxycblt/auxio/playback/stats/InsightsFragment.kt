@@ -145,69 +145,50 @@ class InsightsFragment : Fragment() {
             "${averageSeconds}s"
         }
 
-        // Keep the three summary metrics in one aligned block: listening time on the left,
-        // with streak and average session stacked to the right.
-        val summaryRow = LinearLayout(requireContext()).apply {
+        // Hero metric gets its own full-width card; supporting metrics form a balanced row below.
+        val hero = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(text("TOTAL LISTENING TIME", 11, true).apply {
+                    alpha = 0.78f
+                    letterSpacing = 0.06f
+                })
+                addView(text(duration, 38, true).apply {
+                    setTextColor(resolveColor(android.R.attr.colorAccent))
+                    setPadding(0, dp(3), 0, dp(1))
+                })
+                addView(text("Tracked on this device", 11, false).apply {
+                    alpha = 0.72f
+                })
+            }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            addView(buildListeningBars(), LinearLayout.LayoutParams(dp(72), dp(54)).apply {
+                marginStart = dp(8)
+            })
+        }
+        content.addView(card(hero, high = true), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            dp(118),
+        ).apply { bottomMargin = dp(8) })
+
+        val supportingMetrics = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.TOP
         }
-        val summaryContent = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(text("TOTAL LISTENING TIME", 11, true).apply { alpha = 0.75f })
-            addView(text(duration, 35, true).apply {
-                setTextColor(resolveColor(android.R.attr.colorAccent))
-                setPadding(0, dp(5), 0, dp(3))
-            })
-            // Use the remaining card height as breathing room so the subtitle sits near the bottom.
-            addView(View(requireContext()), LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                0,
-                1f,
-            ))
-            addView(text("Tracked on this device", 11, false).apply { alpha = 0.72f })
-        }
-        summaryRow.addView(card(summaryContent, high = true), LinearLayout.LayoutParams(
-            0,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            1.15f,
-        ).apply { marginEnd = dp(5) })
-
-        val sideMetrics = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-        val streakContent = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(text("Listening streak", 12, true).apply { maxLines = 1 })
-            addView(text(formatStreakDays(data.listeningStreakDays), 20, true).apply {
-                setPadding(0, dp(4), 0, 0)
-            })
-        }
-        val averageContent = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(text("Average session", 12, true).apply { maxLines = 1 })
-            addView(text(averageLabel, 20, true).apply {
-                setPadding(0, dp(4), 0, 0)
-            })
-        }
-        sideMetrics.addView(card(streakContent), LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            0,
-            1f,
-        ).apply { bottomMargin = dp(6) })
-        sideMetrics.addView(card(averageContent), LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            0,
-            1f,
-        ))
-        summaryRow.addView(sideMetrics, LinearLayout.LayoutParams(
-            0,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            1f,
-        ).apply { marginStart = dp(5) })
-        content.addView(summaryRow, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            dp(152),
-        ).apply { bottomMargin = dp(8) })
+        supportingMetrics.addView(metricCard(
+            "Listening streak",
+            formatStreakDays(data.listeningStreakDays),
+            "flame",
+            resolveColor(android.R.attr.colorAccent),
+        ), LinearLayout.LayoutParams(0, dp(84), 1f).apply { marginEnd = dp(4) })
+        supportingMetrics.addView(metricCard(
+            "Average session",
+            averageLabel,
+            "headphones",
+            resolveColor(android.R.attr.colorAccent),
+        ), LinearLayout.LayoutParams(0, dp(84), 1f).apply { marginStart = dp(4) })
+        content.addView(supportingMetrics, marginParams(bottom = 8))
 
         // Two compact columns make the most-played tracks and top artists easier to compare.
         val rankingsRow = LinearLayout(requireContext()).apply {
@@ -267,40 +248,24 @@ class InsightsFragment : Fragment() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.TOP
         }
-        actions.addView(card(LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(text("Create backup", 14, true))
-            addView(text("Save Insights data", 11, false).apply {
-                alpha = 0.72f
-                minLines = 2
-                maxLines = 2
-                ellipsize = TextUtils.TruncateAt.END
-                setPadding(0, dp(4), 0, 0)
-            })
-        }).apply {
+        actions.addView(card(backupActionContent(
+            "Create backup", "Save Insights data", "cloud-download", resolveColor(android.R.attr.colorAccent),
+        )).apply {
             isClickable = true
             isFocusable = true
             setOnClickListener { showPrepareForReinstallDialog() }
-        }, LinearLayout.LayoutParams(0, dp(84), 1f).apply {
+        }, LinearLayout.LayoutParams(0, dp(92), 1f).apply {
             marginEnd = dp(5)
         })
-        actions.addView(card(LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(text("Restore backup", 14, true))
-            addView(text("Import saved statistics", 11, false).apply {
-                alpha = 0.72f
-                minLines = 2
-                maxLines = 2
-                ellipsize = TextUtils.TruncateAt.END
-                setPadding(0, dp(4), 0, 0)
-            })
-        }).apply {
+        actions.addView(card(backupActionContent(
+            "Restore backup", "Import saved statistics", "folder-up", 0xFF78CFC2.toInt(),
+        )).apply {
             isClickable = true
             isFocusable = true
             setOnClickListener {
                 openBackupDocument.launch(arrayOf("application/json"))
             }
-        }, LinearLayout.LayoutParams(0, dp(84), 1f).apply {
+        }, LinearLayout.LayoutParams(0, dp(92), 1f).apply {
             marginStart = dp(5)
         })
         content.addView(actions, marginParams(bottom = 20))
@@ -407,6 +372,82 @@ class InsightsFragment : Fragment() {
     private fun addEmptyState() {
         content.addView(card(text(getString(R.string.lbl_no_stats), 14, false)), marginParams(bottom = 8))
     }
+
+    private fun buildListeningBars(): View = LinearLayout(requireContext()).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        val heights = listOf(15, 25, 19, 36, 29, 46, 34)
+        heights.forEachIndexed { index, height ->
+            addView(View(requireContext()).apply {
+                background = GradientDrawable().apply {
+                    cornerRadius = dp(3).toFloat()
+                    setColor(withAlpha(
+                        resolveColor(android.R.attr.colorAccent),
+                        if (index > 4) 220 else 115,
+                    ))
+                }
+            }, LinearLayout.LayoutParams(dp(6), dp(height)).apply {
+                marginStart = dp(2)
+                marginEnd = dp(2)
+            })
+        }
+    }
+
+    private fun metricCard(label: String, value: String, iconName: String, iconColor: Int): View =
+        card(LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                addView(TextView(requireContext()).apply {
+                    text = when (iconName) {
+                        "flame" -> "✦"
+                        else -> "♫"
+                    }
+                    textSize = 13f
+                    gravity = Gravity.CENTER
+                    setTextColor(iconColor)
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(withAlpha(iconColor, 30))
+                    }
+                }, LinearLayout.LayoutParams(dp(24), dp(24)).apply { marginEnd = dp(6) })
+                addView(text(label, 11, true).apply {
+                    alpha = 0.88f
+                    maxLines = 1
+                    ellipsize = TextUtils.TruncateAt.END
+                }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            })
+            addView(text(value, 19, true).apply {
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
+                setPadding(0, dp(5), 0, 0)
+            })
+        })
+
+    private fun backupActionContent(title: String, subtitle: String, iconName: String, iconColor: Int) =
+        LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(TextView(requireContext()).apply {
+                text = if (iconName == "cloud-download") "↓" else "↑"
+                textSize = 20f
+                gravity = Gravity.CENTER
+                setTextColor(iconColor)
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(withAlpha(iconColor, 32))
+                }
+                setPadding(dp(7), 0, dp(7), 0)
+            }, LinearLayout.LayoutParams(dp(36), dp(36)).apply { bottomMargin = dp(7) })
+            addView(text(title, 14, true).apply { maxLines = 1 })
+            addView(text(subtitle, 11, false).apply {
+                alpha = 0.72f
+                minLines = 1
+                maxLines = 2
+                ellipsize = TextUtils.TruncateAt.END
+                setPadding(0, dp(3), 0, 0)
+            })
+        }
 
     /** Add a consistently sized ranking card with an intentional rank badge and aligned text. */
     private fun addRankingCard(
