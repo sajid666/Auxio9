@@ -43,11 +43,7 @@ internal object InsightsBackup {
                 is Float -> values.put(key, JSONObject().put("type", "float").put("value", value.toDouble()))
             }
         }
-        val updatedAt = maxOf(
-            preferences.getLong(KEY_DATA_UPDATED_AT, 0L),
-            preferences.getLong("last_tick_ms", 0L),
-            preferences.getLong("last_listen_day", 0L),
-        )
+        val updatedAt = latestLocalUpdate(preferences)
         return JSONObject()
             .put("format", "auxio-insights-backup")
             .put("formatVersion", FORMAT_VERSION)
@@ -69,11 +65,7 @@ internal object InsightsBackup {
             ?: throw IllegalArgumentException("The backup does not contain Insights data.")
         val incomingUpdatedAt = root.optLong("dataUpdatedAt", 0L)
         val preferences = preferences(context)
-        val localUpdatedAt = maxOf(
-            preferences.getLong(KEY_DATA_UPDATED_AT, 0L),
-            preferences.getLong("last_tick_ms", 0L),
-            preferences.getLong("last_listen_day", 0L),
-        )
+        val localUpdatedAt = latestLocalUpdate(preferences)
         require(incomingUpdatedAt >= localUpdatedAt) {
             "A newer local Insights history exists. Restore was stopped to protect it."
         }
@@ -94,6 +86,19 @@ internal object InsightsBackup {
         editor.putLong(KEY_DATA_UPDATED_AT, maxOf(incomingUpdatedAt, root.optLong("exportedAt", 0L)))
         check(editor.commit()) { "Could not save restored Insights data." }
         return RestoreResult(true, localUpdatedAt, incomingUpdatedAt)
+    }
+
+    private fun latestLocalUpdate(preferences: SharedPreferences): Long {
+        val trackLastPlayed = preferences.all
+            .filterKeys { it.startsWith("track_") && it.endsWith("_last") }
+            .values
+            .filterIsInstance<Long>()
+            .maxOrNull() ?: 0L
+        return maxOf(
+            preferences.getLong(KEY_DATA_UPDATED_AT, 0L),
+            preferences.getLong("last_tick_ms", 0L),
+            trackLastPlayed,
+        )
     }
 
     private fun preferences(context: Context): SharedPreferences =
