@@ -601,30 +601,32 @@ class InsightsFragment : Fragment() {
         album: String,
     ): Uri? {
         if (title.isBlank()) return null
-        val projection = arrayOf(MediaStore.Audio.Media.ALBUM_ID)
-        val clauses = mutableListOf("${MediaStore.Audio.Media.TITLE} = ?")
-        val args = mutableListOf(title)
-        if (artist.isNotBlank()) {
-            clauses.add("${MediaStore.Audio.Media.ARTIST} = ?")
-            args.add(artist)
-        }
-        if (album.isNotBlank()) {
-            clauses.add("${MediaStore.Audio.Media.ALBUM} = ?")
-            args.add(album)
-        }
-        return runCatching {
+        fun queryArtwork(selection: String, args: Array<String>): Uri? =
             context.contentResolver.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                clauses.joinToString(" AND "),
-                args.toTypedArray(),
+                arrayOf(MediaStore.Audio.Media.ALBUM_ID),
+                selection,
+                args,
                 null,
             )?.use { cursor ->
-                if (cursor.moveToFirst()) {
+                if (!cursor.moveToFirst()) null else {
                     val albumId = cursor.getLong(0)
-                    Uri.parse("content://media/external/audio/albumart/$albumId")
-                } else null
+                    if (albumId > 0L) Uri.parse("content://media/external/audio/albumart/$albumId") else null
+                }
             }
+        return runCatching {
+            val clauses = mutableListOf("${MediaStore.Audio.Media.TITLE} = ?")
+            val args = mutableListOf(title)
+            if (artist.isNotBlank()) {
+                clauses.add("${MediaStore.Audio.Media.ARTIST} = ?")
+                args.add(artist)
+            }
+            if (album.isNotBlank()) {
+                clauses.add("${MediaStore.Audio.Media.ALBUM} = ?")
+                args.add(album)
+            }
+            queryArtwork(clauses.joinToString(" AND "), args.toTypedArray())
+                ?: queryArtwork("${MediaStore.Audio.Media.TITLE} = ?", arrayOf(title))
         }.getOrNull()
     }
 
