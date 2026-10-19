@@ -188,7 +188,7 @@ class InsightsFragment : Fragment() {
             "headphones",
             resolveColor(android.R.attr.colorAccent),
         ), LinearLayout.LayoutParams(0, dp(84), 1f).apply { marginStart = dp(4) })
-        content.addView(supportingMetrics, marginParams(bottom = 8))
+        content.addView(supportingMetrics, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(8); marginStart = dp(8); marginEnd = dp(8) })
 
         // Two compact columns make the most-played tracks and top artists easier to compare.
         val rankingsRow = LinearLayout(requireContext()).apply {
@@ -237,7 +237,7 @@ class InsightsFragment : Fragment() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             1f,
         ).apply { marginStart = dp(4) })
-        content.addView(rankingsRow, marginParams(bottom = 8))
+        content.addView(rankingsRow, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(8) })
 
         addBackupActions()
     }
@@ -268,7 +268,7 @@ class InsightsFragment : Fragment() {
         }, LinearLayout.LayoutParams(0, dp(92), 1f).apply {
             marginStart = dp(5)
         })
-        content.addView(actions, marginParams(bottom = 20))
+        content.addView(actions, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(20); marginStart = dp(8); marginEnd = dp(8) })
     }
 
     private fun showPrepareForReinstallDialog() {
@@ -559,7 +559,7 @@ class InsightsFragment : Fragment() {
 
     private fun marginParams(bottom: Int): LinearLayout.LayoutParams =
         LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
         ).apply {
             bottomMargin = dp(bottom)
