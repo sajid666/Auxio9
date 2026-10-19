@@ -622,10 +622,7 @@ class InsightsFragment : Fragment() {
             )?.use { cursor ->
                 if (cursor.moveToFirst()) {
                     val albumId = cursor.getLong(0)
-                    Uri.withAppendedPath(
-                        MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                        albumId.toString(),
-                    )
+                    Uri.parse("content://media/external/audio/albumart/$albumId")
                 } else null
             }
         }.getOrNull()
