@@ -24,6 +24,7 @@ internal object InsightsBackup {
     private const val PREFERENCES_NAME = "listening_stats"
     private const val FORMAT_VERSION = 1
     private const val KEY_DATA_UPDATED_AT = "backup_data_updated_at"
+    const val MAX_BACKUP_BYTES = 1_048_576
 
     data class RestoreResult(
         val restored: Boolean,
@@ -54,6 +55,9 @@ internal object InsightsBackup {
     }
 
     fun restore(context: Context, content: String): RestoreResult {
+        require(content.length <= MAX_BACKUP_BYTES) {
+            "This backup is too large to import safely."
+        }
         val root = JSONObject(content)
         require(root.optString("format") == "auxio-insights-backup") {
             "This file is not an Auxio Insights backup."
@@ -65,8 +69,9 @@ internal object InsightsBackup {
             ?: throw IllegalArgumentException("The backup does not contain Insights data.")
         val timestampValue = root.opt("dataUpdatedAt")
         require(timestampValue is Number) { "The backup has an invalid data timestamp." }
-        val incomingUpdatedAt = timestampValue.toLong()
-        require(incomingUpdatedAt >= 0L && timestampValue.toDouble() == incomingUpdatedAt.toDouble()) {
+        val incomingUpdatedAt = timestampValue.toString().toLongOrNull()
+            ?: throw IllegalArgumentException("The backup has an invalid data timestamp.")
+        require(incomingUpdatedAt >= 0L) {
             "The backup has an invalid data timestamp."
         }
 
@@ -88,24 +93,14 @@ internal object InsightsBackup {
                 "int" -> {
                     val number = value as? Number
                         ?: throw IllegalArgumentException("The backup contains an invalid integer value.")
-                    val numericValue = number.toDouble()
-                    require(numericValue.isFinite() &&
-                        numericValue % 1.0 == 0.0 &&
-                        numericValue >= Int.MIN_VALUE &&
-                        numericValue <= Int.MAX_VALUE
-                    ) { "The backup contains an invalid integer value." }
-                    numericValue.toInt()
+                    number.toString().toIntOrNull()
+                        ?: throw IllegalArgumentException("The backup contains an invalid integer value.")
                 }
                 "long" -> {
                     val number = value as? Number
                         ?: throw IllegalArgumentException("The backup contains an invalid whole-number value.")
-                    val numericValue = number.toDouble()
-                    require(numericValue.isFinite() &&
-                        numericValue % 1.0 == 0.0 &&
-                        numericValue >= Long.MIN_VALUE.toDouble() &&
-                        numericValue < Long.MAX_VALUE.toDouble()
-                    ) { "The backup contains an invalid whole-number value." }
-                    number.toLong()
+                    number.toString().toLongOrNull()
+                        ?: throw IllegalArgumentException("The backup contains an invalid whole-number value.")
                 }
                 "float" -> {
                     val number = value as? Number
