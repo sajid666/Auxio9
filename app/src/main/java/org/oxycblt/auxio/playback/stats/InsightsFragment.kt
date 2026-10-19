@@ -10,13 +10,19 @@
 package org.oxycblt.auxio.playback.stats
 
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
@@ -41,6 +47,16 @@ private data class InsightsData(
 class InsightsFragment : Fragment() {
     private lateinit var content: LinearLayout
     private var renderJob: Job? = null
+
+    private val createBackupDocument =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+            if (uri != null) writeBackup(uri)
+        }
+
+    private val openBackupDocument =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) restoreBackup(uri)
+        }
 
     override fun onCreateView(
         inflater: android.view.LayoutInflater,
@@ -108,8 +124,9 @@ class InsightsFragment : Fragment() {
         content.addView(text("Listening insights", 28, true).apply { setTextColor(resolveColor(android.R.attr.colorAccent)) })
         content.addView(text(getString(R.string.lbl_stats_since), 14, false).apply {
             alpha = 0.72f
-            setPadding(0, dp(4), 0, dp(16))
+            setPadding(0, dp(4), 0, dp(12))
         })
+        addBackupActions()
 
         val totalMs = data.totalListeningMs
         val hours = totalMs / 3_600_000L
@@ -228,6 +245,101 @@ class InsightsFragment : Fragment() {
             }
         }
 
+    }
+
+    private fun addBackupActions() {
+        val actions = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        actions.addView(Button(requireContext()).apply {
+            text = "Prepare for reinstall"
+            setOnClickListener { showPrepareForReinstallDialog() }
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        actions.addView(Button(requireContext()).apply {
+            text = "Restore backup"
+            setOnClickListener { openBackupDocument.launch(arrayOf("application/json", "text/*")) }
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+            marginStart = dp(8)
+        })
+        content.addView(actions, marginParams(bottom = 16))
+    }
+
+    private fun showPrepareForReinstallDialog() {
+        val keepData = CheckBox(requireContext()).apply {
+            text = "Keep Insights data"
+            isChecked = true
+        }
+        val message = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text(
+                "Create a backup before uninstalling or reinstalling Auxio. The backup includes listening time, streaks, play counts, session statistics, and recent history. Save it somewhere you can access after reinstalling, such as Google Drive.",
+                14,
+                false,
+            ))
+            addView(keepData)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle("Prepare for reinstall")
+            .setView(message)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Continue") { _, _ ->
+                if (keepData.isChecked) {
+                    createBackupDocument.launch("Auxio-Insights-backup.json")
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "No Insights backup will be created. Your statistics may be lost when the app is uninstalled.",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+            }
+            .show()
+    }
+
+    private fun writeBackup(uri: Uri) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = runCatching {
+                val snapshot = withContext(Dispatchers.IO) {
+                    InsightsBackup.export(requireContext().applicationContext)
+                }
+                withContext(Dispatchers.IO) {
+                    requireContext().contentResolver.openOutputStream(uri, "wt")?.use { stream ->
+                        stream.write(snapshot.toByteArray(Charsets.UTF_8))
+                    } ?: error("Could not open the selected backup location.")
+                }
+            }
+            Toast.makeText(
+                requireContext(),
+                if (result.isSuccess) {
+                    "Insights backup saved. Keep this file to restore your statistics after reinstalling."
+                } else {
+                    "Backup failed: ${result.exceptionOrNull()?.localizedMessage ?: "unknown error"}"
+                },
+                Toast.LENGTH_LONG,
+            ).show()
+        }
+    }
+
+    private fun restoreBackup(uri: Uri) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = runCatching {
+                val snapshot = withContext(Dispatchers.IO) {
+                    requireContext().contentResolver.openInputStream(uri)?.bufferedReader()?.use {
+                        it.readText()
+                    } ?: error("Could not read the selected backup file.")
+                }
+                withContext(Dispatchers.IO) {
+                    InsightsBackup.restore(requireContext().applicationContext, snapshot)
+                }
+            }
+            val message = if (result.isSuccess) {
+                "Insights data restored."
+            } else {
+                result.exceptionOrNull()?.localizedMessage ?: "Could not restore this backup."
+            }
+            Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+            if (result.isSuccess) refreshStats()
+        }
     }
 
     private fun addSection(title: String) {
