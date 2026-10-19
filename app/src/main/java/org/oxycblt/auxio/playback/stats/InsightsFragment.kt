@@ -15,6 +15,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import java.io.ByteArrayOutputStream
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.LinearLayout
@@ -297,19 +298,20 @@ class InsightsFragment : Fragment() {
     }
 
     private fun writeBackup(uri: Uri) {
-        viewLifecycleOwner.lifecycleScope.launch {
+        val appContext = requireContext().applicationContext
+        lifecycleScope.launch {
             val result = runCatching {
                 val snapshot = withContext(Dispatchers.IO) {
-                    InsightsBackup.export(requireContext().applicationContext)
+                    InsightsBackup.export(appContext)
                 }
                 withContext(Dispatchers.IO) {
-                    requireContext().contentResolver.openOutputStream(uri, "wt")?.use { stream ->
+                    appContext.contentResolver.openOutputStream(uri, "wt")?.use { stream ->
                         stream.write(snapshot.toByteArray(Charsets.UTF_8))
                     } ?: error("Could not open the selected backup location.")
                 }
             }
             Toast.makeText(
-                requireContext(),
+                appContext,
                 if (result.isSuccess) {
                     "Insights backup saved. Keep this file to restore your statistics after reinstalling."
                 } else {
@@ -321,15 +323,28 @@ class InsightsFragment : Fragment() {
     }
 
     private fun restoreBackup(uri: Uri) {
-        viewLifecycleOwner.lifecycleScope.launch {
+        val appContext = requireContext().applicationContext
+        lifecycleScope.launch {
             val result = runCatching {
                 val snapshot = withContext(Dispatchers.IO) {
-                    requireContext().contentResolver.openInputStream(uri)?.bufferedReader()?.use {
-                        it.readText()
+                    appContext.contentResolver.openInputStream(uri)?.use { stream ->
+                        val output = ByteArrayOutputStream()
+                        val buffer = ByteArray(8_192)
+                        var totalBytes = 0
+                        while (true) {
+                            val count = stream.read(buffer)
+                            if (count < 0) break
+                            totalBytes += count
+                            require(totalBytes <= InsightsBackup.MAX_BACKUP_BYTES) {
+                                "This backup is too large to import safely."
+                            }
+                            output.write(buffer, 0, count)
+                        }
+                        output.toString(Charsets.UTF_8.name())
                     } ?: error("Could not read the selected backup file.")
                 }
                 withContext(Dispatchers.IO) {
-                    InsightsBackup.restore(requireContext().applicationContext, snapshot)
+                    InsightsBackup.restore(appContext, snapshot)
                 }
             }
             val message = if (result.isSuccess) {
@@ -337,8 +352,8 @@ class InsightsFragment : Fragment() {
             } else {
                 result.exceptionOrNull()?.localizedMessage ?: "Could not restore this backup."
             }
-            Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
-            if (result.isSuccess) refreshStats()
+            Toast.makeText(appContext, message, Toast.LENGTH_LONG).show()
+            if (result.isSuccess && isAdded && view != null) refreshStats()
         }
     }
 
