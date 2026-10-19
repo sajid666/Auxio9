@@ -145,7 +145,8 @@ class InsightsFragment : Fragment() {
         }
         val streakColumn = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            addView(text("Listening streak", 16, true).apply {
+            addView(text("Listening streak", 13, true).apply {
+                maxLines = 1
                 setPadding(0, 0, 0, dp(8))
             })
             val value = LinearLayout(requireContext()).apply {
@@ -159,7 +160,8 @@ class InsightsFragment : Fragment() {
         }
         val averageColumn = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            addView(text("Average session", 16, true).apply {
+            addView(text("Average session", 13, true).apply {
+                maxLines = 1
                 setPadding(0, 0, 0, dp(8))
             })
             val value = LinearLayout(requireContext()).apply {
@@ -181,7 +183,14 @@ class InsightsFragment : Fragment() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             1f,
         ).apply { marginStart = dp(5) })
-        content.addView(summaryRow, marginParams(bottom = 8))
+        content.addView(summaryRow, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        ).apply {
+            bottomMargin = dp(8)
+            marginStart = dp(8)
+            marginEnd = dp(8)
+        })
 
         addSection("Most played tracks")
         if (songs.isEmpty()) {
