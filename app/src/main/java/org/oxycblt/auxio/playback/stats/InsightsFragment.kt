@@ -10,6 +10,11 @@
 package org.oxycblt.auxio.playback.stats
 
 import android.graphics.Typeface
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RadialGradient
+import android.graphics.Shader
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.text.TextUtils
 import android.net.Uri
@@ -68,6 +73,7 @@ class InsightsFragment : Fragment() {
         val context = requireContext()
         val scroll = ScrollView(context).apply {
             clipToPadding = false
+            background = AmbientInsightsBackground()
             setPadding(dp(16), dp(12), dp(16), dp(28))
         }
         ViewCompat.setOnApplyWindowInsetsListener(scroll) { view, insets ->
@@ -427,7 +433,8 @@ class InsightsFragment : Fragment() {
 
     private fun backupActionContent(title: String, subtitle: String, iconName: String, iconColor: Int) =
         LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
             addView(TextView(requireContext()).apply {
                 text = if (iconName == "cloud-download") "↓" else "↑"
                 textSize = 20f
@@ -438,15 +445,17 @@ class InsightsFragment : Fragment() {
                     setColor(withAlpha(iconColor, 32))
                 }
                 setPadding(dp(7), 0, dp(7), 0)
-            }, LinearLayout.LayoutParams(dp(36), dp(36)).apply { bottomMargin = dp(7) })
-            addView(text(title, 14, true).apply { maxLines = 1 })
-            addView(text(subtitle, 11, false).apply {
-                alpha = 0.72f
-                minLines = 1
-                maxLines = 2
-                ellipsize = TextUtils.TruncateAt.END
-                setPadding(0, dp(3), 0, 0)
-            })
+            }, LinearLayout.LayoutParams(dp(42), dp(42)).apply { marginEnd = dp(9) })
+            addView(LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(text(title, 13, true).apply { maxLines = 2; ellipsize = TextUtils.TruncateAt.END })
+                addView(text(subtitle, 11, false).apply {
+                    alpha = 0.78f
+                    maxLines = 2
+                    ellipsize = TextUtils.TruncateAt.END
+                    setPadding(0, dp(3), 0, 0)
+                })
+            }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         }
 
     /** Add a consistently sized ranking card with an intentional rank badge and aligned text. */
@@ -568,6 +577,35 @@ class InsightsFragment : Fragment() {
         }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    /** Ambient blurred blue-violet background with restrained amber and teal accents. */
+    private inner class AmbientInsightsBackground : Drawable() {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        override fun draw(canvas: Canvas) {
+            val b = bounds
+            paint.shader = null
+            paint.color = 0xFF080D19.toInt()
+            canvas.drawRect(b, paint)
+            glow(canvas, b.left + b.width() * 0.18f, b.top + b.height() * 0.10f, b.width() * 0.62f, 0xAA563BFF.toInt())
+            glow(canvas, b.left + b.width() * 0.88f, b.top + b.height() * 0.35f, b.width() * 0.48f, 0x883D79FF.toInt())
+            glow(canvas, b.left + b.width() * 0.72f, b.top + b.height() * 0.72f, b.width() * 0.38f, 0x6658C9C0.toInt())
+            glow(canvas, b.left + b.width() * 0.18f, b.top + b.height() * 0.86f, b.width() * 0.30f, 0x66D88962.toInt())
+            paint.shader = null
+        }
+
+        private fun glow(canvas: Canvas, x: Float, y: Float, radius: Float, color: Int) {
+            paint.shader = RadialGradient(x, y, radius,
+                intArrayOf(color, withAlpha(color, 35), 0x00000000),
+                floatArrayOf(0f, 0.58f, 1f), Shader.TileMode.CLAMP)
+            canvas.drawCircle(x, y, radius, paint)
+        }
+
+        override fun setAlpha(alpha: Int) {}
+        override fun setColorFilter(colorFilter: android.graphics.ColorFilter?) {}
+        @Deprecated("Deprecated in Java")
+        override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+    }
 }
 
 /** Format a listening streak with correct singular/plural wording. */
