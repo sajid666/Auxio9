@@ -537,8 +537,6 @@ class InsightsFragment : Fragment() {
                     imageLoader.enqueue(
                         ImageRequest.Builder(requireContext())
                             .data(artworkUri)
-                            .placeholder(R.drawable.ic_album_24)
-                            .error(R.drawable.ic_album_24)
                             .target(artworkView)
                             .build()
                     )
