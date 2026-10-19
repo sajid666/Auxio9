@@ -147,7 +147,13 @@ class InsightsFragment : Fragment() {
                             val storedUri = tracked.artworkUri?.let { value ->
                                 runCatching { Uri.parse(value) }.getOrNull()
                             }
-                            (libraryUri ?: storedUri)?.let { tracked.id to it }
+                            val mediaStoreUri = findMediaStoreArtwork(
+                                appContext,
+                                tracked.title,
+                                tracked.artist,
+                                tracked.album,
+                            )
+                            (libraryUri ?: storedUri ?: mediaStoreUri)?.let { tracked.id to it }
                         }.toMap()
                         InsightsData(
                             songs = songs,
@@ -653,6 +659,54 @@ class InsightsFragment : Fragment() {
             marginStart = dp(8)
             marginEnd = dp(8)
         }
+
+    /**
+     * Fallback for libraries whose artwork is indexed by Android MediaStore but is not exposed
+     * through Auxio's cover provider. Query by exact tags first, then by title only.
+     */
+    private fun findMediaStoreArtwork(
+        context: android.content.Context,
+        title: String,
+        artist: String,
+        album: String,
+    ): Uri? {
+        if (title.isBlank()) return null
+
+        fun query(selection: String, args: Array<String>): Uri? =
+            context.contentResolver.query(
+                android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                arrayOf(android.provider.MediaStore.Audio.Media.ALBUM_ID),
+                selection,
+                args,
+                null,
+            )?.use { cursor ->
+                if (!cursor.moveToFirst()) {
+                    null
+                } else {
+                    val albumId = cursor.getLong(0)
+                    if (albumId > 0L) {
+                        Uri.parse("content://media/external/audio/albumart/$albumId")
+                    } else {
+                        null
+                    }
+                }
+            }
+
+        return runCatching {
+            val clauses = mutableListOf("${android.provider.MediaStore.Audio.Media.TITLE} = ?")
+            val args = mutableListOf(title)
+            if (artist.isNotBlank()) {
+                clauses.add("${android.provider.MediaStore.Audio.Media.ARTIST} = ?")
+                args.add(artist)
+            }
+            if (album.isNotBlank()) {
+                clauses.add("${android.provider.MediaStore.Audio.Media.ALBUM} = ?")
+                args.add(album)
+            }
+            query(clauses.joinToString(" AND "), args.toTypedArray())
+                ?: query("${android.provider.MediaStore.Audio.Media.TITLE} = ?", arrayOf(title))
+        }.getOrNull()
+    }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
