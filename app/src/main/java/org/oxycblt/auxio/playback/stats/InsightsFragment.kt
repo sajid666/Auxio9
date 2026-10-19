@@ -277,7 +277,7 @@ class InsightsFragment : Fragment() {
             isClickable = true
             isFocusable = true
             setOnClickListener {
-                openBackupDocument.launch(arrayOf("application/json", "text/*"))
+                openBackupDocument.launch(arrayOf("application/json"))
             }
         }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
             marginStart = dp(5)
