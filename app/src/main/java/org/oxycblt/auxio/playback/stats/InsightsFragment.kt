@@ -16,6 +16,8 @@ import android.graphics.RadialGradient
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.provider.MediaStore
+import android.widget.ImageView
 import android.text.TextUtils
 import android.net.Uri
 import android.os.Bundle
@@ -48,6 +50,7 @@ private data class InsightsData(
     val totalListeningMs: Long,
     val listeningStreakDays: Long,
     val averageSessionMs: Long,
+    val artworkUris: Map<String, Uri>,
 )
 
 /** A local overview of listening history collected by the playback service. */
@@ -118,6 +121,9 @@ class InsightsFragment : Fragment() {
                             totalListeningMs = tracker.totalListeningMs(),
                             listeningStreakDays = tracker.listeningStreakDays(),
                             averageSessionMs = tracker.averageSessionMs(),
+                            artworkUris = tracker.mostPlayed(3).associate { song ->
+                                song.id to findArtworkUri(appContext, song.title, song.artist, song.album)
+                            }.mapNotNull { (id, uri) -> uri?.let { id to it } }.toMap(),
                         )
                     }
                 renderStats(data)
@@ -223,6 +229,7 @@ class InsightsFragment : Fragment() {
                     song.title.ifBlank { "Unknown track" },
                     song.artist.ifBlank { "Unknown artist" },
                     song.plays,
+                    data.artworkUris[song.id],
                 )
             }
         }
@@ -243,7 +250,7 @@ class InsightsFragment : Fragment() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             1f,
         ).apply { marginStart = dp(4) })
-        content.addView(rankingsRow, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(8) })
+        content.addView(rankingsRow, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(2) })
 
         addBackupActions()
     }
@@ -465,6 +472,7 @@ class InsightsFragment : Fragment() {
         title: String,
         subtitle: String?,
         plays: Long,
+        artworkUri: Uri? = null,
     ) {
         val accent = resolveColor(android.R.attr.colorAccent)
         val details = LinearLayout(requireContext()).apply {
@@ -483,8 +491,17 @@ class InsightsFragment : Fragment() {
                 }
                 setPadding(dp(5), dp(1), dp(5), dp(1))
             }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(18)))
+            if (artworkUri != null && subtitle != null) {
+                addView(ImageView(requireContext()).apply {
+                    scaleType = ImageView.ScaleType.CENTER_CROP
+                    clipToOutline = true
+                    background = GradientDrawable().apply { cornerRadius = dp(8).toFloat() }
+                    contentDescription = "Album artwork for $title"
+                    setImageURI(artworkUri)
+                }, LinearLayout.LayoutParams(dp(42), dp(42)).apply { topMargin = dp(7) })
+            }
             addView(text(title, 13, true).apply {
-                maxLines = 1
+                maxLines = 2
                 ellipsize = TextUtils.TruncateAt.END
                 setPadding(0, dp(3), 0, 0)
             })
@@ -529,10 +546,10 @@ class InsightsFragment : Fragment() {
             }
             val surfaceColor = resolveColor(colorAttribute)
             // Glass-inspired translucent surfaces with a theme-colored outline.
-            setCardBackgroundColor(withAlpha(surfaceColor, if (high) 238 else 218))
+            setCardBackgroundColor(withAlpha(surfaceColor, if (high) 228 else 178))
             strokeColor = withAlpha(
                 resolveColor(android.R.attr.colorAccent),
-                if (high) 170 else 95,
+                if (high) 145 else 70,
             )
             setContentPadding(dp(14), dp(12), dp(14), dp(12))
             if (high) {
@@ -576,6 +593,44 @@ class InsightsFragment : Fragment() {
             marginEnd = dp(8)
         }
 
+    /** Resolve local album artwork through Android's media index; missing artwork is optional. */
+    private fun findArtworkUri(
+        context: android.content.Context,
+        title: String,
+        artist: String,
+        album: String,
+    ): Uri? {
+        if (title.isBlank()) return null
+        val projection = arrayOf(MediaStore.Audio.Media.ALBUM_ID)
+        val clauses = mutableListOf("${MediaStore.Audio.Media.TITLE} = ?")
+        val args = mutableListOf(title)
+        if (artist.isNotBlank()) {
+            clauses.add("${MediaStore.Audio.Media.ARTIST} = ?")
+            args.add(artist)
+        }
+        if (album.isNotBlank()) {
+            clauses.add("${MediaStore.Audio.Media.ALBUM} = ?")
+            args.add(album)
+        }
+        return runCatching {
+            context.contentResolver.query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                clauses.joinToString(" AND "),
+                args.toTypedArray(),
+                null,
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val albumId = cursor.getLong(0)
+                    Uri.withAppendedPath(
+                        MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                        albumId.toString(),
+                    )
+                } else null
+            }
+        }.getOrNull()
+    }
+
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     /** Ambient blurred blue-violet background with restrained amber and teal accents. */
@@ -587,8 +642,8 @@ class InsightsFragment : Fragment() {
             paint.shader = null
             paint.color = 0xFF080D19.toInt()
             canvas.drawRect(b, paint)
-            glow(canvas, b.left + b.width() * 0.18f, b.top + b.height() * 0.10f, b.width() * 0.62f, 0xAA563BFF.toInt())
-            glow(canvas, b.left + b.width() * 0.88f, b.top + b.height() * 0.35f, b.width() * 0.48f, 0x883D79FF.toInt())
+            glow(canvas, b.left + b.width() * 0.18f, b.top + b.height() * 0.10f, b.width() * 0.62f, 0x80563BFF.toInt())
+            glow(canvas, b.left + b.width() * 0.88f, b.top + b.height() * 0.35f, b.width() * 0.48f, 0x733D79FF.toInt())
             glow(canvas, b.left + b.width() * 0.72f, b.top + b.height() * 0.72f, b.width() * 0.38f, 0x6658C9C0.toInt())
             glow(canvas, b.left + b.width() * 0.18f, b.top + b.height() * 0.86f, b.width() * 0.30f, 0x66D88962.toInt())
             paint.shader = null
