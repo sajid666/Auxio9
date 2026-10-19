@@ -492,26 +492,46 @@ class InsightsFragment : Fragment() {
                 setPadding(dp(5), dp(1), dp(5), dp(1))
             }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(18)))
             if (artworkUri != null && subtitle != null) {
-                addView(ImageView(requireContext()).apply {
-                    scaleType = ImageView.ScaleType.CENTER_CROP
-                    clipToOutline = true
-                    background = GradientDrawable().apply { cornerRadius = dp(8).toFloat() }
-                    contentDescription = "Album artwork for $title"
-                    setImageURI(artworkUri)
-                }, LinearLayout.LayoutParams(dp(42), dp(42)).apply { topMargin = dp(7) })
-            }
-            addView(text(title, 13, true).apply {
-                maxLines = 2
-                ellipsize = TextUtils.TruncateAt.END
-                setPadding(0, dp(3), 0, 0)
-            })
-            if (subtitle != null) {
-                addView(text(subtitle, 11, false).apply {
-                    alpha = 0.72f
-                    maxLines = 1
-                    ellipsize = TextUtils.TruncateAt.END
-                    setPadding(0, dp(2), 0, 0)
+                addView(LinearLayout(requireContext()).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    addView(ImageView(requireContext()).apply {
+                        scaleType = ImageView.ScaleType.CENTER_CROP
+                        background = GradientDrawable().apply { cornerRadius = dp(7).toFloat() }
+                        clipToOutline = true
+                        contentDescription = "Album artwork for $title"
+                        setImageURI(artworkUri)
+                    }, LinearLayout.LayoutParams(dp(42), dp(42)).apply { marginEnd = dp(8) })
+                    addView(LinearLayout(requireContext()).apply {
+                        orientation = LinearLayout.VERTICAL
+                        addView(text(title, 12, true).apply {
+                            maxLines = 2
+                            ellipsize = TextUtils.TruncateAt.END
+                        })
+                        addView(text(subtitle, 10, false).apply {
+                            alpha = 0.72f
+                            maxLines = 1
+                            ellipsize = TextUtils.TruncateAt.END
+                            setPadding(0, dp(2), 0, 0)
+                        })
+                    }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(46)).apply {
+                    topMargin = dp(4)
                 })
+            } else {
+                addView(text(title, 13, true).apply {
+                    maxLines = 2
+                    ellipsize = TextUtils.TruncateAt.END
+                    setPadding(0, dp(3), 0, 0)
+                })
+                if (subtitle != null) {
+                    addView(text(subtitle, 11, false).apply {
+                        alpha = 0.72f
+                        maxLines = 1
+                        ellipsize = TextUtils.TruncateAt.END
+                        setPadding(0, dp(2), 0, 0)
+                    })
+                }
             }
             // Anchor play counts at the bottom so they line up across both columns.
             addView(View(requireContext()), LinearLayout.LayoutParams(
@@ -526,7 +546,7 @@ class InsightsFragment : Fragment() {
         }
         parent.addView(card(details), LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            dp(100),
+            if (artworkUri != null && subtitle != null) dp(112) else dp(100),
         ).apply {
             bottomMargin = dp(8)
             marginStart = dp(2)
