@@ -593,7 +593,9 @@ class InsightsFragment : Fragment() {
         }
         parent.addView(card(details), LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            dp(100),
+            // The artwork row, rank badge, and anchored play count need more room than
+            // the text-only card. Keep the count fully visible on smaller screens.
+            dp(if (artworkUri != null && subtitle != null) 124 else 100),
         ).apply {
             bottomMargin = dp(8)
             marginStart = dp(2)
