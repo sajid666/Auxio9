@@ -130,15 +130,6 @@ class InsightsFragment : Fragment() {
         summaryContent.addView(text("Tracked on this device", 14, false).apply { alpha = 0.72f })
         content.addView(card(summaryContent, high = true), marginParams(bottom = 12))
 
-        addSection("Listening streak")
-        val streakContent = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(text(formatStreakDays(data.listeningStreakDays), 28, true))
-            addView(text("Consecutive days with music played", 13, false).apply { alpha = 0.72f })
-        }
-        content.addView(card(streakContent), marginParams(bottom = 8))
-
-        addSection("Average session")
         val averageMs = data.averageSessionMs
         val averageMinutes = averageMs / 60_000L
         val averageSeconds = (averageMs % 60_000L) / 1_000L
@@ -147,12 +138,50 @@ class InsightsFragment : Fragment() {
         } else {
             "${averageSeconds}s"
         }
-        val averageContent = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(text(averageLabel, 28, true))
-            addView(text("Average listening time per session", 13, false).apply { alpha = 0.72f })
+
+        val summaryRow = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.TOP
         }
-        content.addView(card(averageContent), marginParams(bottom = 8))
+        val streakColumn = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text("Listening streak", 16, true).apply {
+                setPadding(0, 0, 0, dp(8))
+            })
+            val value = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(text(formatStreakDays(data.listeningStreakDays), 22, true))
+            }
+            addView(card(value), LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ))
+        }
+        val averageColumn = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text("Average session", 16, true).apply {
+                setPadding(0, 0, 0, dp(8))
+            })
+            val value = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(text(averageLabel, 22, true))
+            }
+            addView(card(value), LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ))
+        }
+        summaryRow.addView(streakColumn, LinearLayout.LayoutParams(
+            0,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            1f,
+        ).apply { marginEnd = dp(5) })
+        summaryRow.addView(averageColumn, LinearLayout.LayoutParams(
+            0,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            1f,
+        ).apply { marginStart = dp(5) })
+        content.addView(summaryRow, marginParams(bottom = 8))
 
         addSection("Most played tracks")
         if (songs.isEmpty()) {
