@@ -10,6 +10,8 @@
 package org.oxycblt.auxio.playback.stats
 
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.text.TextUtils
 import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
@@ -152,10 +154,16 @@ class InsightsFragment : Fragment() {
         val summaryContent = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             addView(text("TOTAL LISTENING TIME", 11, true).apply { alpha = 0.75f })
-            addView(text(duration, 29, true).apply {
+            addView(text(duration, 35, true).apply {
                 setTextColor(resolveColor(android.R.attr.colorAccent))
                 setPadding(0, dp(5), 0, dp(3))
             })
+            // Use the remaining card height as breathing room so the subtitle sits near the bottom.
+            addView(View(requireContext()), LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1f,
+            ))
             addView(text("Tracked on this device", 11, false).apply { alpha = 0.72f })
         }
         summaryRow.addView(card(summaryContent, high = true), LinearLayout.LayoutParams(
@@ -210,45 +218,32 @@ class InsightsFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
             addView(text("Most played tracks", 17, true).apply {
                 setPadding(0, dp(12), 0, dp(10))
-            })
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(64)))
         }
         val artistsColumn = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             addView(text("Top artists", 17, true).apply {
                 setPadding(0, dp(12), 0, dp(10))
-            })
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(64)))
         }
         if (songs.isEmpty()) {
             songsColumn.addView(card(text(getString(R.string.lbl_no_stats), 12, false)), marginParams(bottom = 8))
         } else {
             songs.forEachIndexed { index, song ->
-                val detail = LinearLayout(requireContext()).apply {
-                    orientation = LinearLayout.VERTICAL
-                    addView(text(song.title.ifBlank { "Unknown track" }, 14, true))
-                    addView(text(
-                        song.artist.ifBlank { "Unknown artist" },
-                        11,
-                        false,
-                    ).apply {
-                        alpha = 0.72f
-                        setPadding(0, dp(3), 0, dp(5))
-                    })
-                    addView(text(formatPlayCount(song.plays), 11, false).apply { alpha = 0.78f })
-                }
-                addRankedRowTo(songsColumn, index, detail)
+                addRankingCard(
+                    songsColumn,
+                    index,
+                    song.title.ifBlank { "Unknown track" },
+                    song.artist.ifBlank { "Unknown artist" },
+                    song.plays,
+                )
             }
         }
         if (artists.isEmpty()) {
             artistsColumn.addView(card(text(getString(R.string.lbl_no_stats), 12, false)), marginParams(bottom = 8))
         } else {
             artists.forEachIndexed { index, artist ->
-                addRankedRowTo(artistsColumn, index, LinearLayout(requireContext()).apply {
-                    orientation = LinearLayout.VERTICAL
-                    addView(text(artist.name, 14, true))
-                    addView(text(formatPlayCount(artist.plays), 11, false).apply {
-                        setPadding(0, dp(3), 0, 0)
-                    })
-                })
+                addRankingCard(artistsColumn, index, artist.name.ifBlank { "Unknown artist" }, null, artist.plays)
             }
         }
         rankingsRow.addView(songsColumn, LinearLayout.LayoutParams(
@@ -277,13 +272,16 @@ class InsightsFragment : Fragment() {
             addView(text("Create backup", 14, true))
             addView(text("Save Insights data", 11, false).apply {
                 alpha = 0.72f
+                minLines = 2
+                maxLines = 2
+                ellipsize = TextUtils.TruncateAt.END
                 setPadding(0, dp(4), 0, 0)
             })
         }).apply {
             isClickable = true
             isFocusable = true
             setOnClickListener { showPrepareForReinstallDialog() }
-        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+        }, LinearLayout.LayoutParams(0, dp(84), 1f).apply {
             marginEnd = dp(5)
         })
         actions.addView(card(LinearLayout(requireContext()).apply {
@@ -291,6 +289,9 @@ class InsightsFragment : Fragment() {
             addView(text("Restore backup", 14, true))
             addView(text("Import saved statistics", 11, false).apply {
                 alpha = 0.72f
+                minLines = 2
+                maxLines = 2
+                ellipsize = TextUtils.TruncateAt.END
                 setPadding(0, dp(4), 0, 0)
             })
         }).apply {
@@ -299,7 +300,7 @@ class InsightsFragment : Fragment() {
             setOnClickListener {
                 openBackupDocument.launch(arrayOf("application/json"))
             }
-        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+        }, LinearLayout.LayoutParams(0, dp(84), 1f).apply {
             marginStart = dp(5)
         })
         content.addView(actions, marginParams(bottom = 20))
@@ -407,23 +408,58 @@ class InsightsFragment : Fragment() {
         content.addView(card(text(getString(R.string.lbl_no_stats), 14, false)), marginParams(bottom = 8))
     }
 
-    private fun addRankedRowTo(parent: LinearLayout, index: Int, details: View) {
-        val line = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
+    /** Add a consistently sized ranking card with an intentional rank badge and aligned text. */
+    private fun addRankingCard(
+        parent: LinearLayout,
+        index: Int,
+        title: String,
+        subtitle: String?,
+        plays: Long,
+    ) {
+        val accent = resolveColor(android.R.attr.colorAccent)
+        val details = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(TextView(requireContext()).apply {
+                text = "#${index + 1}"
+                textSize = 10f
+                setTypeface(typeface, Typeface.BOLD)
+                gravity = Gravity.CENTER
+                setTextColor(accent)
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = dp(8).toFloat()
+                    setColor(withAlpha(accent, 36))
+                    setStroke(dp(1), withAlpha(accent, 90))
+                }
+                setPadding(dp(5), dp(1), dp(5), dp(1))
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(18)))
+            addView(text(title, 13, true).apply {
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
+                setPadding(0, dp(3), 0, 0)
+            })
+            if (subtitle != null) {
+                addView(text(subtitle, 11, false).apply {
+                    alpha = 0.72f
+                    maxLines = 1
+                    ellipsize = TextUtils.TruncateAt.END
+                    setPadding(0, dp(2), 0, 0)
+                })
+            }
+            // Anchor play counts at the bottom so they line up across both columns.
+            addView(View(requireContext()), LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1f,
+            ))
+            addView(text(formatPlayCount(plays), 11, false).apply {
+                alpha = 0.82f
+                setPadding(0, dp(2), 0, 0)
+            })
         }
-        line.addView(text((index + 1).toString(), 12, true).apply {
-            gravity = Gravity.CENTER
-            alpha = 0.72f
-        }, LinearLayout.LayoutParams(dp(20), ViewGroup.LayoutParams.WRAP_CONTENT))
-        line.addView(details, LinearLayout.LayoutParams(
-            0,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            1f,
-        ))
-        parent.addView(card(line), LinearLayout.LayoutParams(
+        parent.addView(card(details), LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
+            dp(100),
         ).apply {
             bottomMargin = dp(8)
             marginStart = dp(2)
@@ -449,7 +485,11 @@ class InsightsFragment : Fragment() {
                 if (high) 170 else 95,
             )
             setContentPadding(dp(14), dp(12), dp(14), dp(12))
-            addView(child)
+            if (high) {
+                addView(child, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            } else {
+                addView(child)
+            }
         }
 
     private fun text(value: String, sizeSp: Int, bold: Boolean): TextView =
