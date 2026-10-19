@@ -45,13 +45,17 @@ internal object InsightsBackup {
             }
         }
         val updatedAt = latestLocalUpdate(preferences)
-        return JSONObject()
+        val snapshot = JSONObject()
             .put("format", "auxio-insights-backup")
             .put("formatVersion", FORMAT_VERSION)
             .put("exportedAt", now)
             .put("dataUpdatedAt", updatedAt)
             .put("data", values)
             .toString(2)
+        require(snapshot.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_BYTES) {
+            "Insights data is too large to export safely."
+        }
+        return snapshot
     }
 
     fun restore(context: Context, content: String): RestoreResult {
