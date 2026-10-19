@@ -16,7 +16,6 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import java.io.ByteArrayOutputStream
-import android.widget.Button
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -127,8 +126,6 @@ class InsightsFragment : Fragment() {
             alpha = 0.72f
             setPadding(0, dp(4), 0, dp(12))
         })
-        addBackupActions()
-
         val totalMs = data.totalListeningMs
         val hours = totalMs / 3_600_000L
         val minutes = (totalMs % 3_600_000L) / 60_000L
@@ -246,23 +243,46 @@ class InsightsFragment : Fragment() {
             }
         }
 
+        addBackupActions()
     }
 
     private fun addBackupActions() {
+        addSection("Backup & restore")
         val actions = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.TOP
         }
-        actions.addView(Button(requireContext()).apply {
-            text = "Prepare for reinstall"
+        actions.addView(card(LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text("Prepare for reinstall", 14, true))
+            addView(text("Save your Insights data", 11, false).apply {
+                alpha = 0.72f
+                setPadding(0, dp(4), 0, 0)
+            })
+        }).apply {
+            isClickable = true
+            isFocusable = true
             setOnClickListener { showPrepareForReinstallDialog() }
-        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        actions.addView(Button(requireContext()).apply {
-            text = "Restore backup"
-            setOnClickListener { openBackupDocument.launch(arrayOf("application/json", "text/*")) }
         }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
-            marginStart = dp(8)
+            marginEnd = dp(5)
         })
-        content.addView(actions, marginParams(bottom = 16))
+        actions.addView(card(LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text("Restore backup", 14, true))
+            addView(text("Import saved statistics", 11, false).apply {
+                alpha = 0.72f
+                setPadding(0, dp(4), 0, 0)
+            })
+        }).apply {
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                openBackupDocument.launch(arrayOf("application/json", "text/*"))
+            }
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+            marginStart = dp(5)
+        })
+        content.addView(actions, marginParams(bottom = 20))
     }
 
     private fun showPrepareForReinstallDialog() {
