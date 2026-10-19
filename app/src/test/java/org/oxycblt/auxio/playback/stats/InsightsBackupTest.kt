@@ -105,4 +105,49 @@ class InsightsBackupTest {
         assertEquals(25_000L, preferences.getLong("total_listening_ms", 0L))
         assertEquals("""{"title":"Keep me"}""", preferences.getString("history_0", null))
     }
+    @Test
+    fun oversizedBackupIsRejectedWithoutChangingLocalStatistics() {
+        preferences.edit()
+            .putLong("total_listening_ms", 25_000L)
+            .commit()
+        val oversizedBackup = " ".repeat(InsightsBackup.MAX_BACKUP_BYTES + 1)
+
+        val result = runCatching { InsightsBackup.restore(context, oversizedBackup) }
+
+        assertFalse(result.isSuccess)
+        assertEquals(25_000L, preferences.getLong("total_listening_ms", 0L))
+    }
+
+    @Test
+    fun restorePreservesLongValuesWithoutFloatingPointPrecisionLoss() {
+        preferences.edit()
+            .putLong("large_counter", Long.MAX_VALUE)
+            .putLong("backup_data_updated_at", 1_700_000_000_000L)
+            .commit()
+        val backup = InsightsBackup.export(context)
+        preferences.edit().clear().commit()
+
+        InsightsBackup.restore(context, backup)
+
+        assertEquals(Long.MAX_VALUE, preferences.getLong("large_counter", 0L))
+    }
+
+    @Test
+    fun restoreRejectsFractionalLongWithoutChangingLocalStatistics() {
+        preferences.edit()
+            .putLong("total_listening_ms", 25_000L)
+            .commit()
+        val malformedBackup = """{
+            "format":"auxio-insights-backup",
+            "formatVersion":1,
+            "dataUpdatedAt":0,
+            "data":{"total_listening_ms":{"type":"long","value":12.5}}
+        }"""
+
+        val result = runCatching { InsightsBackup.restore(context, malformedBackup) }
+
+        assertFalse(result.isSuccess)
+        assertEquals(25_000L, preferences.getLong("total_listening_ms", 0L))
+    }
+
 }
