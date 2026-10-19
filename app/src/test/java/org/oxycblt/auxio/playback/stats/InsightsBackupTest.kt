@@ -77,7 +77,7 @@ class InsightsBackupTest {
 
     @Test
     fun restoreRejectsUnknownBackupFormat() {
-        val result = runCatching { InsightsBackup.restore(context, """{"format":"other"}""")
+        val result = runCatching { InsightsBackup.restore(context, """{"format":"other"}""") }
 
         assertFalse(result.isSuccess)
     }
