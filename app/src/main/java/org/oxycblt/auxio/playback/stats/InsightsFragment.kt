@@ -16,9 +16,17 @@ import android.graphics.RadialGradient
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
-import android.provider.MediaStore
 import android.widget.ImageView
 import android.text.TextUtils
+import coil3.ImageLoader
+import coil3.request.ImageRequest
+import coil3.request.target
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import org.oxycblt.auxio.image.CoverProvider
+import org.oxycblt.auxio.music.MusicRepository
+import org.oxycblt.auxio.music.resolve
+import org.oxycblt.auxio.music.resolveNames
 import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
@@ -54,7 +62,10 @@ private data class InsightsData(
 )
 
 /** A local overview of listening history collected by the playback service. */
+@AndroidEntryPoint
 class InsightsFragment : Fragment() {
+    @Inject lateinit var imageLoader: ImageLoader
+    @Inject lateinit var musicRepository: MusicRepository
     private lateinit var content: LinearLayout
     private var renderJob: Job? = null
 
@@ -115,15 +126,36 @@ class InsightsFragment : Fragment() {
                 val data =
                     withContext(Dispatchers.Default) {
                         val tracker = PlaybackStatsTracker(appContext)
+                        val songs = tracker.mostPlayed(3)
+                        val librarySongs = musicRepository.library?.songs.orEmpty()
+                        val artworkUris = songs.mapNotNull { tracked ->
+                            val titleMatches = librarySongs.filter { librarySong ->
+                                librarySong.name.resolve(appContext).equals(tracked.title, ignoreCase = true)
+                            }
+                            val matchedSong = titleMatches.firstOrNull { librarySong ->
+                                (tracked.artist.isBlank() ||
+                                    librarySong.artists.resolveNames(appContext).equals(tracked.artist, ignoreCase = true)) &&
+                                    (tracked.album.isBlank() ||
+                                        librarySong.album.name.resolve(appContext).equals(tracked.album, ignoreCase = true))
+                            } ?: titleMatches.firstOrNull { librarySong ->
+                                tracked.artist.isBlank() ||
+                                    librarySong.artists.resolveNames(appContext).equals(tracked.artist, ignoreCase = true)
+                            } ?: titleMatches.firstOrNull()
+                            val libraryUri = matchedSong?.cover?.let { cover ->
+                                Uri.withAppendedPath(CoverProvider.CONTENT_URI, cover.id)
+                            }
+                            val storedUri = tracked.artworkUri?.let { value ->
+                                runCatching { Uri.parse(value) }.getOrNull()
+                            }
+                            (libraryUri ?: storedUri)?.let { tracked.id to it }
+                        }.toMap()
                         InsightsData(
-                            songs = tracker.mostPlayed(3),
+                            songs = songs,
                             artists = tracker.mostPlayedArtists(3),
                             totalListeningMs = tracker.totalListeningMs(),
                             listeningStreakDays = tracker.listeningStreakDays(),
                             averageSessionMs = tracker.averageSessionMs(),
-                            artworkUris = tracker.mostPlayed(3).associate { song ->
-                                song.id to findArtworkUri(appContext, song.title, song.artist, song.album)
-                            }.mapNotNull { (id, uri) -> uri?.let { id to it } }.toMap(),
+                            artworkUris = artworkUris,
                         )
                     }
                 renderStats(data)
@@ -495,13 +527,24 @@ class InsightsFragment : Fragment() {
                 addView(LinearLayout(requireContext()).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
-                    addView(ImageView(requireContext()).apply {
+                    val artworkView = ImageView(requireContext()).apply {
                         scaleType = ImageView.ScaleType.CENTER_CROP
                         background = GradientDrawable().apply { cornerRadius = dp(7).toFloat() }
                         clipToOutline = true
                         contentDescription = "Album artwork for $title"
-                        setImageURI(artworkUri)
-                    }, LinearLayout.LayoutParams(dp(42), dp(42)).apply { marginEnd = dp(8) })
+                        setImageResource(R.drawable.ic_album_24)
+                    }
+                    imageLoader.enqueue(
+                        ImageRequest.Builder(requireContext())
+                            .data(artworkUri)
+                            .placeholder(R.drawable.ic_album_24)
+                            .error(R.drawable.ic_album_24)
+                            .target(artworkView)
+                            .build()
+                    )
+                    addView(artworkView, LinearLayout.LayoutParams(dp(42), dp(42)).apply {
+                        marginEnd = dp(8)
+                    })
                     addView(LinearLayout(requireContext()).apply {
                         orientation = LinearLayout.VERTICAL
                         addView(text(title, 12, true).apply {
@@ -612,43 +655,6 @@ class InsightsFragment : Fragment() {
             marginStart = dp(8)
             marginEnd = dp(8)
         }
-
-    /** Resolve local album artwork through Android's media index; missing artwork is optional. */
-    private fun findArtworkUri(
-        context: android.content.Context,
-        title: String,
-        artist: String,
-        album: String,
-    ): Uri? {
-        if (title.isBlank()) return null
-        fun queryArtwork(selection: String, args: Array<String>): Uri? =
-            context.contentResolver.query(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                arrayOf(MediaStore.Audio.Media.ALBUM_ID),
-                selection,
-                args,
-                null,
-            )?.use { cursor ->
-                if (!cursor.moveToFirst()) null else {
-                    val albumId = cursor.getLong(0)
-                    if (albumId > 0L) Uri.parse("content://media/external/audio/albumart/$albumId") else null
-                }
-            }
-        return runCatching {
-            val clauses = mutableListOf("${MediaStore.Audio.Media.TITLE} = ?")
-            val args = mutableListOf(title)
-            if (artist.isNotBlank()) {
-                clauses.add("${MediaStore.Audio.Media.ARTIST} = ?")
-                args.add(artist)
-            }
-            if (album.isNotBlank()) {
-                clauses.add("${MediaStore.Audio.Media.ALBUM} = ?")
-                args.add(album)
-            }
-            queryArtwork(clauses.joinToString(" AND "), args.toTypedArray())
-                ?: queryArtwork("${MediaStore.Audio.Media.TITLE} = ?", arrayOf(title))
-        }.getOrNull()
-    }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
