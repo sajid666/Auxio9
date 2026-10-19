@@ -134,17 +134,6 @@ class InsightsFragment : Fragment() {
             minutes > 0L -> "${minutes}m"
             else -> "${totalMs / 1_000L}s"
         }
-        val summaryContent = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-        summaryContent.addView(text("TOTAL LISTENING TIME", 12, true).apply { alpha = 0.75f })
-        summaryContent.addView(text(duration, 36, true).apply {
-            setTextColor(resolveColor(android.R.attr.colorAccent))
-            setPadding(0, dp(4), 0, dp(2))
-        })
-        summaryContent.addView(text("Tracked on this device", 14, false).apply { alpha = 0.72f })
-        content.addView(card(summaryContent, high = true), marginParams(bottom = 12))
-
         val averageMs = data.averageSessionMs
         val averageMinutes = averageMs / 60_000L
         val averageSeconds = (averageMs % 60_000L) / 1_000L
@@ -154,94 +143,125 @@ class InsightsFragment : Fragment() {
             "${averageSeconds}s"
         }
 
+        // Keep the three summary metrics in one aligned block: listening time on the left,
+        // with streak and average session stacked to the right.
         val summaryRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.TOP
         }
-        val streakColumn = LinearLayout(requireContext()).apply {
+        val summaryContent = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            addView(text("Listening streak", 13, true).apply {
-                maxLines = 1
-                setPadding(0, 0, 0, dp(8))
+            addView(text("TOTAL LISTENING TIME", 11, true).apply { alpha = 0.75f })
+            addView(text(duration, 29, true).apply {
+                setTextColor(resolveColor(android.R.attr.colorAccent))
+                setPadding(0, dp(5), 0, dp(3))
             })
-            val value = LinearLayout(requireContext()).apply {
-                orientation = LinearLayout.VERTICAL
-                addView(text(formatStreakDays(data.listeningStreakDays), 22, true))
-            }
-            addView(card(value), LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            ))
+            addView(text("Tracked on this device", 11, false).apply { alpha = 0.72f })
         }
-        val averageColumn = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(text("Average session", 13, true).apply {
-                maxLines = 1
-                setPadding(0, 0, 0, dp(8))
-            })
-            val value = LinearLayout(requireContext()).apply {
-                orientation = LinearLayout.VERTICAL
-                addView(text(averageLabel, 22, true))
-            }
-            addView(card(value), LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            ))
-        }
-        summaryRow.addView(streakColumn, LinearLayout.LayoutParams(
+        summaryRow.addView(card(summaryContent, high = true), LinearLayout.LayoutParams(
             0,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            1f,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            1.15f,
         ).apply { marginEnd = dp(5) })
-        summaryRow.addView(averageColumn, LinearLayout.LayoutParams(
+
+        val sideMetrics = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        val streakContent = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text("Listening streak", 12, true).apply { maxLines = 1 })
+            addView(text(formatStreakDays(data.listeningStreakDays), 20, true).apply {
+                setPadding(0, dp(4), 0, 0)
+            })
+        }
+        val averageContent = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text("Average session", 12, true).apply { maxLines = 1 })
+            addView(text(averageLabel, 20, true).apply {
+                setPadding(0, dp(4), 0, 0)
+            })
+        }
+        sideMetrics.addView(card(streakContent), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
             0,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
+            1f,
+        ).apply { bottomMargin = dp(6) })
+        sideMetrics.addView(card(averageContent), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            0,
+            1f,
+        ))
+        summaryRow.addView(sideMetrics, LinearLayout.LayoutParams(
+            0,
+            ViewGroup.LayoutParams.MATCH_PARENT,
             1f,
         ).apply { marginStart = dp(5) })
         content.addView(summaryRow, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-        ).apply {
-            bottomMargin = dp(8)
-            marginStart = dp(8)
-            marginEnd = dp(8)
-        })
+            dp(152),
+        ).apply { bottomMargin = dp(8) })
 
-        addSection("Most played tracks")
+        // Two compact columns make the most-played tracks and top artists easier to compare.
+        val rankingsRow = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.TOP
+        }
+        val songsColumn = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text("Most played tracks", 17, true).apply {
+                setPadding(0, dp(12), 0, dp(10))
+            })
+        }
+        val artistsColumn = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(text("Top artists", 17, true).apply {
+                setPadding(0, dp(12), 0, dp(10))
+            })
+        }
         if (songs.isEmpty()) {
-            addEmptyState()
+            songsColumn.addView(card(text(getString(R.string.lbl_no_stats), 12, false)), marginParams(bottom = 8))
         } else {
             songs.forEachIndexed { index, song ->
                 val detail = LinearLayout(requireContext()).apply {
                     orientation = LinearLayout.VERTICAL
+                    addView(text(song.title.ifBlank { "Unknown track" }, 14, true))
+                    addView(text(
+                        song.artist.ifBlank { "Unknown artist" },
+                        11,
+                        false,
+                    ).apply {
+                        alpha = 0.72f
+                        setPadding(0, dp(3), 0, dp(5))
+                    })
+                    addView(text(formatPlayCount(song.plays), 11, false).apply { alpha = 0.78f })
                 }
-                detail.addView(text(song.title.ifBlank { "Unknown track" }, 16, true))
-                detail.addView(text(
-                    listOf(song.artist, song.album).filter { it.isNotBlank() }
-                        .joinToString(" · ").ifBlank { "Unknown artist" },
-                    13,
-                    false,
-                ).apply {
-                    alpha = 0.72f
-                    setPadding(0, dp(3), 0, dp(5))
-                })
-                detail.addView(text(formatPlayCount(song.plays), 12, false).apply { alpha = 0.78f })
-                addRankedRow(index, detail)
+                addRankedRowTo(songsColumn, index, detail)
             }
         }
-
-        addSection("Top artists")
         if (artists.isEmpty()) {
-            addEmptyState()
+            artistsColumn.addView(card(text(getString(R.string.lbl_no_stats), 12, false)), marginParams(bottom = 8))
         } else {
             artists.forEachIndexed { index, artist ->
-                addRankedRow(index, LinearLayout(requireContext()).apply {
+                addRankedRowTo(artistsColumn, index, LinearLayout(requireContext()).apply {
                     orientation = LinearLayout.VERTICAL
-                    addView(text(artist.name, 16, true))
-                    addView(text(formatPlayCount(artist.plays), 12, false))
+                    addView(text(artist.name, 14, true))
+                    addView(text(formatPlayCount(artist.plays), 11, false).apply {
+                        setPadding(0, dp(3), 0, 0)
+                    })
                 })
             }
         }
+        rankingsRow.addView(songsColumn, LinearLayout.LayoutParams(
+            0,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            1f,
+        ).apply { marginEnd = dp(4) })
+        rankingsRow.addView(artistsColumn, LinearLayout.LayoutParams(
+            0,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            1f,
+        ).apply { marginStart = dp(4) })
+        content.addView(rankingsRow, marginParams(bottom = 8))
 
         addBackupActions()
     }
@@ -254,8 +274,8 @@ class InsightsFragment : Fragment() {
         }
         actions.addView(card(LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            addView(text("Prepare for reinstall", 14, true))
-            addView(text("Save your Insights data", 11, false).apply {
+            addView(text("Create backup", 14, true))
+            addView(text("Save Insights data", 11, false).apply {
                 alpha = 0.72f
                 setPadding(0, dp(4), 0, 0)
             })
@@ -387,22 +407,27 @@ class InsightsFragment : Fragment() {
         content.addView(card(text(getString(R.string.lbl_no_stats), 14, false)), marginParams(bottom = 8))
     }
 
-    private fun addRankedRow(index: Int, details: View) {
+    private fun addRankedRowTo(parent: LinearLayout, index: Int, details: View) {
         val line = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
-        line.addView(text((index + 1).toString().padStart(2, '0'), 14, true).apply {
+        line.addView(text((index + 1).toString(), 12, true).apply {
             gravity = Gravity.CENTER
             alpha = 0.72f
-        }, LinearLayout.LayoutParams(dp(34), ViewGroup.LayoutParams.WRAP_CONTENT))
+        }, LinearLayout.LayoutParams(dp(20), ViewGroup.LayoutParams.WRAP_CONTENT))
         line.addView(details, LinearLayout.LayoutParams(
+            0,
             ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
+            1f,
         ))
-        content.addView(card(line), marginParams(bottom = 8).apply {
-            marginStart = dp(8)
-            marginEnd = dp(8)
+        parent.addView(card(line), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        ).apply {
+            bottomMargin = dp(8)
+            marginStart = dp(2)
+            marginEnd = dp(2)
         })
     }
 
