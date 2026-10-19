@@ -83,7 +83,7 @@ internal object InsightsBackup {
                 "float" -> editor.putFloat(key, entry.optDouble("value").toFloat())
             }
         }
-        editor.putLong(KEY_DATA_UPDATED_AT, maxOf(incomingUpdatedAt, root.optLong("exportedAt", 0L)))
+        editor.putLong(KEY_DATA_UPDATED_AT, incomingUpdatedAt)
         check(editor.commit()) { "Could not save restored Insights data." }
         return RestoreResult(true, localUpdatedAt, incomingUpdatedAt)
     }
