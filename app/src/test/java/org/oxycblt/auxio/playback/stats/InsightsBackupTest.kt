@@ -52,6 +52,7 @@ class InsightsBackupTest {
         assertEquals(4L, preferences.getLong("streak_days", 0L))
         assertEquals(3L, preferences.getLong("track_song_plays", 0L))
         assertTrue(preferences.getString("history_0", "").orEmpty().contains("Test track"))
+        assertEquals(1_700_000_000_000L, preferences.getLong("backup_data_updated_at", 0L))
     }
 
     @Test
