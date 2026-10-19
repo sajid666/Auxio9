@@ -533,6 +533,21 @@ class InsightsFragment : Fragment() {
                 addView(LinearLayout(requireContext()).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
+                    addView(LinearLayout(requireContext()).apply {
+                        orientation = LinearLayout.VERTICAL
+                        addView(text(title, 12, true).apply {
+                            maxLines = 2
+                            ellipsize = TextUtils.TruncateAt.END
+                        })
+                        addView(text(subtitle, 10, false).apply {
+                            alpha = 0.72f
+                            maxLines = 1
+                            ellipsize = TextUtils.TruncateAt.END
+                            setPadding(0, dp(2), 0, 0)
+                        })
+                    }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                        marginEnd = dp(6)
+                    })
                     val artworkView = ImageView(requireContext()).apply {
                         scaleType = ImageView.ScaleType.CENTER_CROP
                         background = GradientDrawable().apply { cornerRadius = dp(7).toFloat() }
@@ -546,23 +561,8 @@ class InsightsFragment : Fragment() {
                             .target(artworkView)
                             .build()
                     )
-                    addView(artworkView, LinearLayout.LayoutParams(dp(42), dp(42)).apply {
-                        marginEnd = dp(8)
-                    })
-                    addView(LinearLayout(requireContext()).apply {
-                        orientation = LinearLayout.VERTICAL
-                        addView(text(title, 12, true).apply {
-                            maxLines = 2
-                            ellipsize = TextUtils.TruncateAt.END
-                        })
-                        addView(text(subtitle, 10, false).apply {
-                            alpha = 0.72f
-                            maxLines = 1
-                            ellipsize = TextUtils.TruncateAt.END
-                            setPadding(0, dp(2), 0, 0)
-                        })
-                    }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-                }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(46)).apply {
+                    addView(artworkView, LinearLayout.LayoutParams(dp(40), dp(40)))
+                }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)).apply {
                     topMargin = dp(4)
                 })
             } else {
@@ -593,7 +593,7 @@ class InsightsFragment : Fragment() {
         }
         parent.addView(card(details), LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            if (artworkUri != null && subtitle != null) dp(112) else dp(100),
+            dp(100),
         ).apply {
             bottomMargin = dp(8)
             marginStart = dp(2)
