@@ -54,6 +54,7 @@ class PlaybackStatsTracker(
         val lastDay = preferences.getLong(KEY_LAST_LISTEN_DAY, -1L)
         val editor = preferences.edit()
         editor.putLong(KEY_TOTAL_MS, preferences.getLong(KEY_TOTAL_MS, 0L) + 1_000L)
+        editor.putLong("backup_data_updated_at", now)
         editor.putLong(
             key(id, "time"),
             preferences.getLong(
@@ -133,6 +134,7 @@ class PlaybackStatsTracker(
                 .putString(key(id, "artist"), artist)
                 .putString(key(id, "album"), album)
                 .putLong(key(id, "last"), now)
+                .putLong("backup_data_updated_at", now)
         for (index in HISTORY_LIMIT - 1 downTo 1) {
             preferences.getString(historyKey(index - 1), null)?.let {
                 editor.putString(historyKey(index), it)
