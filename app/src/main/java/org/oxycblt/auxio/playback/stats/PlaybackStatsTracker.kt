@@ -23,6 +23,7 @@ data class TrackedSong(
     val plays: Long,
     val listeningMs: Long,
     val lastPlayedMs: Long,
+    val artworkUri: String? = null,
 )
 
 /** A ranked artist or album. */
@@ -54,6 +55,7 @@ class PlaybackStatsTracker(
         val lastDay = preferences.getLong(KEY_LAST_LISTEN_DAY, -1L)
         val editor = preferences.edit()
         editor.putLong(KEY_TOTAL_MS, preferences.getLong(KEY_TOTAL_MS, 0L) + 1_000L)
+        editor.putLong("backup_data_updated_at", now)
         editor.putLong(
             key(id, "time"),
             preferences.getLong(
@@ -133,6 +135,10 @@ class PlaybackStatsTracker(
                 .putString(key(id, "artist"), artist)
                 .putString(key(id, "album"), album)
                 .putLong(key(id, "last"), now)
+                .putLong("backup_data_updated_at", now)
+        metadata.artworkUri?.toString()?.takeIf { it.isNotBlank() }?.let { artworkUri ->
+            editor.putString(key(id, "artwork_uri"), artworkUri)
+        }
         for (index in HISTORY_LIMIT - 1 downTo 1) {
             preferences.getString(historyKey(index - 1), null)?.let {
                 editor.putString(historyKey(index), it)
@@ -171,6 +177,7 @@ class PlaybackStatsTracker(
                     plays = plays,
                     listeningMs = preferences.getLong(trackKey(id, "time"), 0L),
                     lastPlayedMs = preferences.getLong(trackKey(id, "last"), 0L),
+                    artworkUri = preferences.getString(trackKey(id, "artwork_uri"), null),
                 )
             }
         }.sortedWith(

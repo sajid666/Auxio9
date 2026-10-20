@@ -10,6 +10,7 @@
 package org.oxycblt.auxio.playback.stats
 
 import android.content.Context
+import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import org.junit.Assert.assertEquals
@@ -135,6 +136,26 @@ class PlaybackStatsTrackerTest {
         tracker.recordPlay(song)
 
         assertEquals(2L, tracker.mostPlayed(1).single().plays)
+    }
+
+    @Test
+    fun artworkUriIsPersistedWithMostPlayedTrack() {
+        val artworkUri = Uri.parse("content://org.oxycblt.auxio.image.CoverProvider/covers/test-cover")
+        val item = MediaItem.Builder()
+            .setMediaId("song-with-artwork")
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle("Artwork track")
+                    .setArtist("Artwork artist")
+                    .setAlbumTitle("Artwork album")
+                    .setArtworkUri(artworkUri)
+                    .build()
+            )
+            .build()
+
+        tracker.recordPlay(item)
+
+        assertEquals(artworkUri.toString(), tracker.mostPlayed(1).single().artworkUri)
     }
 
     private fun mediaItem(id: String, artist: String = "Test Artist") =
