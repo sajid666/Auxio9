@@ -216,10 +216,12 @@ constructor(
         if (requestedImageUri == uriString) return
         val request = imageRequestId.incrementAndGet()
         requestedImageUri = uriString
-        val uri = runCatching { Uri.parse(uriString) }.getOrNull() ?: run {
-            requestedImageUri = null
-            return
-        }
+        val uri =
+            runCatching { Uri.parse(uriString) }.getOrNull()
+                ?: run {
+                    requestedImageUri = null
+                    return
+                }
         val targetWidth =
             measuredWidth.coerceAtLeast(resources.displayMetrics.widthPixels).coerceAtLeast(1)
         val targetHeight =

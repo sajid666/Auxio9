@@ -22,6 +22,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.text.InputType
+import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.GridLayout
 import android.widget.LinearLayout
@@ -133,12 +134,13 @@ class UIPreferenceFragment : BasePreferenceFragment(R.xml.preferences_ui) {
             getString(R.string.set_key_glass_background_color_two),
             getString(R.string.set_key_glass_background_color_three),
             getString(R.string.set_key_glass_background_solid_color) -> {
-                val defaults = mapOf(
-                    getString(R.string.set_key_glass_background_color_one) to "#10172A",
-                    getString(R.string.set_key_glass_background_color_two) to "#36527F",
-                    getString(R.string.set_key_glass_background_color_three) to "#91578B",
-                    getString(R.string.set_key_glass_background_solid_color) to "#10172A",
-                )
+                val defaults =
+                    mapOf(
+                        getString(R.string.set_key_glass_background_color_one) to "#10172A",
+                        getString(R.string.set_key_glass_background_color_two) to "#36527F",
+                        getString(R.string.set_key_glass_background_color_three) to "#91578B",
+                        getString(R.string.set_key_glass_background_solid_color) to "#10172A",
+                    )
                 val selectedColor =
                     PreferenceManager.getDefaultSharedPreferences(requireContext())
                         .getString(preference.key, defaults[preference.key]) ?: "#10172A"
@@ -186,27 +188,31 @@ class UIPreferenceFragment : BasePreferenceFragment(R.xml.preferences_ui) {
     private fun showGlassColorPicker(preference: Preference) {
         val entries = resources.getStringArray(R.array.entries_glass_background_colors)
         val colors = resources.getStringArray(R.array.values_glass_background_colors)
-        val grid = GridLayout(requireContext()).apply {
-            columnCount = 2
-            useDefaultMargins = true
-        }
+        val grid =
+            GridLayout(requireContext()).apply {
+                columnCount = 2
+                useDefaultMargins = true
+            }
         val swatches = mutableListOf<Pair<MaterialButton, String>>()
         val density = resources.displayMetrics.density
         val margin = (4 * density).toInt()
         entries.forEachIndexed { index, label ->
             val color = colors.getOrElse(index) { "#10172A" }
             val colorInt = runCatching { Color.parseColor(color) }.getOrDefault(Color.DKGRAY)
-            val button = MaterialButton(requireContext()).apply {
-                text = "$label\n$color"
-                textSize = 12f
-                maxLines = 2
-                isAllCaps = false
-                setTextColor(if (Color.luminance(colorInt) < 0.45f) Color.WHITE else Color.BLACK)
-                backgroundTintList = ColorStateList.valueOf(colorInt)
-                contentDescription = "$label, $color"
-                insetTop = 0
-                insetBottom = 0
-            }
+            val button =
+                MaterialButton(requireContext()).apply {
+                    text = "$label\n$color"
+                    textSize = 12f
+                    maxLines = 2
+                    isAllCaps = false
+                    setTextColor(
+                        if (Color.luminance(colorInt) < 0.45f) Color.WHITE else Color.BLACK
+                    )
+                    backgroundTintList = ColorStateList.valueOf(colorInt)
+                    contentDescription = "$label, $color"
+                    insetTop = 0
+                    insetBottom = 0
+                }
             val params =
                 GridLayout.LayoutParams().apply {
                     width = 0
@@ -217,17 +223,22 @@ class UIPreferenceFragment : BasePreferenceFragment(R.xml.preferences_ui) {
             grid.addView(button, params)
             swatches.add(button to color)
         }
-        val scroll = ScrollView(requireContext()).apply {
-            isFillViewport = true
-            addView(grid, ScrollView.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-            ))
-        }
-        val customButton = MaterialButton(requireContext()).apply {
-            text = getString(R.string.set_glass_custom_color_hex)
-            isAllCaps = false
-        }
+        val scroll =
+            ScrollView(requireContext()).apply {
+                isFillViewport = true
+                addView(
+                    grid,
+                    ViewGroup.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ),
+                )
+            }
+        val customButton =
+            MaterialButton(requireContext()).apply {
+                text = getString(R.string.set_glass_custom_color_hex)
+                isAllCaps = false
+            }
         val content =
             LinearLayout(requireContext()).apply {
                 orientation = LinearLayout.VERTICAL
@@ -266,26 +277,30 @@ class UIPreferenceFragment : BasePreferenceFragment(R.xml.preferences_ui) {
     }
 
     private fun showCustomGlassColorDialog(preference: Preference) {
-        val current = PreferenceManager.getDefaultSharedPreferences(requireContext())
-            .getString(preference.key, "#10172A") ?: "#10172A"
-        val input = EditText(requireContext()).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            setSingleLine(true)
-            hint = "#RRGGBB"
-            setText(current)
-        }
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(preference.title)
-            .setMessage(R.string.set_glass_custom_color_invalid)
-            .setView(input)
-            .setNegativeButton(R.string.lbl_cancel, null)
-            .setPositiveButton(R.string.lbl_save, null)
-            .create()
+        val current =
+            PreferenceManager.getDefaultSharedPreferences(requireContext())
+                .getString(preference.key, "#10172A") ?: "#10172A"
+        val input =
+            EditText(requireContext()).apply {
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                setSingleLine(true)
+                hint = "#RRGGBB"
+                setText(current)
+            }
+        val dialog =
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(preference.title)
+                .setMessage(R.string.set_glass_custom_color_invalid)
+                .setView(input)
+                .setNegativeButton(R.string.lbl_cancel, null)
+                .setPositiveButton(R.string.lbl_save, null)
+                .create()
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val value = input.text.toString().trim()
-                val valid = value.matches(Regex("^#[0-9A-Fa-f]{6}$")) &&
-                    runCatching { Color.parseColor(value) }.isSuccess
+                val valid =
+                    value.matches(Regex("^#[0-9A-Fa-f]{6}$")) &&
+                        runCatching { Color.parseColor(value) }.isSuccess
                 if (valid) {
                     saveGlassColor(preference, value.uppercase(Locale.ROOT))
                     dialog.dismiss()
