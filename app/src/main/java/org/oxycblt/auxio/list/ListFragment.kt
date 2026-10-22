@@ -20,6 +20,8 @@ package org.oxycblt.auxio.list
 
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
+import org.oxycblt.auxio.R
+import org.oxycblt.auxio.ui.GlassBackgroundView
 import org.oxycblt.musikr.Music
 
 /**
@@ -29,6 +31,11 @@ import org.oxycblt.musikr.Music
  */
 abstract class ListFragment<in T : Music, VB : ViewBinding> :
     SelectionFragment<VB>(), SelectableListListener<T> {
+    override fun onResume() {
+        super.onResume()
+        view?.findViewById<GlassBackgroundView>(R.id.home_glass_background)?.refreshBackground()
+    }
+
     /**
      * Called when [onClick] is called, but does not result in the item being selected. This more or
      * less corresponds to an [onClick] implementation in a non-[ListFragment].

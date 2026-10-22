@@ -89,6 +89,11 @@ constructor(
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         preferences.registerOnSharedPreferenceChangeListener(preferenceListener)
+        refreshBackground()
+    }
+
+    /** Re-read saved options when a library list returns to the foreground. */
+    fun refreshBackground() {
         renderBackground()
     }
 
