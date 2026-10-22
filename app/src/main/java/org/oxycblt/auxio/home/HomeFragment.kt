@@ -250,7 +250,8 @@ class HomeFragment : SelectionFragment<FragmentHomeBinding>() {
     }
 
     private fun animateTabSelection(tabView: View) {
-        // A restrained spring gives the selected tab a tactile response without changing its layout.
+        // A restrained spring gives the selected tab a tactile response without changing its
+        // layout.
         tabView.scaleX = 0.96f
         tabView.scaleY = 0.96f
 
