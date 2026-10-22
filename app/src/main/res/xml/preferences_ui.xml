@@ -49,33 +49,29 @@
             app:entries="@array/entries_glass_background_preset"
             app:entryValues="@array/values_glass_background_preset" />
 
-        <ListPreference
+        <Preference
             app:key="@string/set_key_glass_background_color_one"
             app:title="@string/set_glass_background_color_one"
-            app:defaultValue="#10172A"
-            app:entries="@array/entries_glass_background_colors"
-            app:entryValues="@array/values_glass_background_colors" />
+            app:summary="@string/set_glass_background_color_summary"
+            app:persistent="false" />
 
-        <ListPreference
+        <Preference
             app:key="@string/set_key_glass_background_color_two"
             app:title="@string/set_glass_background_color_two"
-            app:defaultValue="#36527F"
-            app:entries="@array/entries_glass_background_colors"
-            app:entryValues="@array/values_glass_background_colors" />
+            app:summary="@string/set_glass_background_color_summary"
+            app:persistent="false" />
 
-        <ListPreference
+        <Preference
             app:key="@string/set_key_glass_background_color_three"
             app:title="@string/set_glass_background_color_three"
-            app:defaultValue="#91578B"
-            app:entries="@array/entries_glass_background_colors"
-            app:entryValues="@array/values_glass_background_colors" />
+            app:summary="@string/set_glass_background_color_summary"
+            app:persistent="false" />
 
-        <ListPreference
+        <Preference
             app:key="@string/set_key_glass_background_solid_color"
             app:title="@string/set_glass_background_solid_color"
-            app:defaultValue="#10172A"
-            app:entries="@array/entries_glass_background_colors"
-            app:entryValues="@array/values_glass_background_colors" />
+            app:summary="@string/set_glass_background_color_summary"
+            app:persistent="false" />
 
         <Preference
             app:key="@string/set_key_glass_background_image"
@@ -89,7 +85,7 @@
             app:summary="@string/set_glass_background_blur_desc"
             app:defaultValue="28"
             app:min="0"
-            app:max="48"
+            android:max="48"
             app:seekBarIncrement="4"
             app:showSeekBarValue="true" />
 
@@ -99,7 +95,7 @@
             app:summary="@string/set_glass_background_darkness_desc"
             app:defaultValue="35"
             app:min="0"
-            app:max="70"
+            android:max="70"
             app:seekBarIncrement="5"
             app:showSeekBarValue="true" />
 

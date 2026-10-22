@@ -6,7 +6,16 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+ 
 package org.oxycblt.auxio.playback.stats
 
 import android.content.Context
@@ -35,7 +44,8 @@ class InsightsBackupTest {
 
     @Test
     fun exportAndRestorePreserveListeningStatisticsAndHistory() {
-        preferences.edit()
+        preferences
+            .edit()
             .putLong("total_listening_ms", 42_000L)
             .putLong("streak_days", 4L)
             .putLong("track_song_plays", 3L)
@@ -57,11 +67,13 @@ class InsightsBackupTest {
 
     @Test
     fun olderBackupCannotOverwriteNewerLocalStatistics() {
-        preferences.edit()
+        preferences
+            .edit()
             .putLong("total_listening_ms", 10_000L)
             .putLong("backup_data_updated_at", 1_700_000_000_000L)
             .commit()
-        val oldBackup = """{
+        val oldBackup =
+            """{
             "format":"auxio-insights-backup",
             "formatVersion":1,
             "exportedAt":1699999999000,
@@ -84,12 +96,14 @@ class InsightsBackupTest {
 
     @Test
     fun malformedEntryDoesNotClearExistingLocalStatistics() {
-        preferences.edit()
+        preferences
+            .edit()
             .putLong("total_listening_ms", 25_000L)
             .putString("history_0", """{"title":"Keep me"}""")
             .putLong("backup_data_updated_at", 1_700_000_000_000L)
             .commit()
-        val malformedBackup = """{
+        val malformedBackup =
+            """{
             "format":"auxio-insights-backup",
             "formatVersion":1,
             "dataUpdatedAt":1700000000000,
@@ -105,11 +119,10 @@ class InsightsBackupTest {
         assertEquals(25_000L, preferences.getLong("total_listening_ms", 0L))
         assertEquals("""{"title":"Keep me"}""", preferences.getString("history_0", null))
     }
+
     @Test
     fun oversizedBackupIsRejectedWithoutChangingLocalStatistics() {
-        preferences.edit()
-            .putLong("total_listening_ms", 25_000L)
-            .commit()
+        preferences.edit().putLong("total_listening_ms", 25_000L).commit()
         val oversizedBackup = " ".repeat(InsightsBackup.MAX_BACKUP_BYTES + 1)
 
         val result = runCatching { InsightsBackup.restore(context, oversizedBackup) }
@@ -120,7 +133,8 @@ class InsightsBackupTest {
 
     @Test
     fun restorePreservesLongValuesWithoutFloatingPointPrecisionLoss() {
-        preferences.edit()
+        preferences
+            .edit()
             .putLong("large_counter", Long.MAX_VALUE)
             .putLong("backup_data_updated_at", 1_700_000_000_000L)
             .commit()
@@ -134,10 +148,9 @@ class InsightsBackupTest {
 
     @Test
     fun restoreRejectsFractionalLongWithoutChangingLocalStatistics() {
-        preferences.edit()
-            .putLong("total_listening_ms", 25_000L)
-            .commit()
-        val malformedBackup = """{
+        preferences.edit().putLong("total_listening_ms", 25_000L).commit()
+        val malformedBackup =
+            """{
             "format":"auxio-insights-backup",
             "formatVersion":1,
             "dataUpdatedAt":0,
@@ -149,5 +162,4 @@ class InsightsBackupTest {
         assertFalse(result.isSuccess)
         assertEquals(25_000L, preferences.getLong("total_listening_ms", 0L))
     }
-
 }

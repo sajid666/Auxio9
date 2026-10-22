@@ -261,6 +261,9 @@
     <string name="set_glass_background_blur_desc">Adjust how softly the background is blurred. Blur requires Android 12 or later.</string>
     <string name="set_glass_background_darkness">Dark overlay</string>
     <string name="set_glass_background_darkness_desc">Darken the background to keep song titles readable.</string>
+    <string name="set_glass_background_color_summary">Selected color: %1$s</string>
+    <string name="set_glass_custom_color_hex">Enter a custom hex color…</string>
+    <string name="set_glass_custom_color_invalid">Enter a six-digit hex color such as #8A5CE6.</string>
 
     <string name="set_personalize">Personalize</string>
     <string name="set_personalize_desc">Customize UI controls and behavior</string>

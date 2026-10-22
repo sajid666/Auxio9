@@ -19,12 +19,19 @@
 package org.oxycblt.auxio.settings.categories
 
 import android.content.Intent
+import android.graphics.Color
+import android.text.InputType
+import android.widget.EditText
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.edit
 import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
+import androidx.preference.ListPreference
 import androidx.preference.PreferenceManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.Locale
 import javax.inject.Inject
 import org.oxycblt.auxio.R
 import org.oxycblt.auxio.settings.BasePreferenceFragment
@@ -56,12 +63,15 @@ class UIPreferenceFragment : BasePreferenceFragment(R.xml.preferences_ui) {
                     L.w(exception, "Unable to persist background image permission")
                 }
 
-                PreferenceManager.getDefaultSharedPreferences(appContext)
-                    .edit()
-                    .putString(getString(R.string.set_key_glass_background_image), uri.toString())
-                    .apply()
+                PreferenceManager.getDefaultSharedPreferences(appContext).edit {
+                    putString(getString(R.string.set_key_glass_background_image), uri.toString())
+                    putString(getString(R.string.set_key_glass_background_style), "image")
+                }
                 findPreference<Preference>(getString(R.string.set_key_glass_background_image))
                     ?.summary = getString(R.string.set_glass_background_image_selected)
+                findPreference<ListPreference>(getString(R.string.set_key_glass_background_style))
+                    ?.value = "image"
+                updateGlassPreferenceVisibility("image")
             }
         }
 
@@ -89,18 +99,52 @@ class UIPreferenceFragment : BasePreferenceFragment(R.xml.preferences_ui) {
             }
             getString(R.string.set_key_glass_background_image) -> {
                 val imageKey = getString(R.string.set_key_glass_background_image)
-                val storedUri = PreferenceManager.getDefaultSharedPreferences(requireContext())
-                    .getString(imageKey, null)
-                preference.summary = if (storedUri.isNullOrBlank()) {
-                    getString(R.string.set_glass_background_image_none)
-                } else {
-                    getString(R.string.set_glass_background_image_selected)
-                }
+                val storedUri =
+                    PreferenceManager.getDefaultSharedPreferences(requireContext())
+                        .getString(imageKey, null)
+                preference.summary =
+                    if (storedUri.isNullOrBlank()) {
+                        getString(R.string.set_glass_background_image_none)
+                    } else {
+                        getString(R.string.set_glass_background_image_selected)
+                    }
                 preference.setOnPreferenceClickListener {
                     glassImagePicker.launch(arrayOf("image/*"))
                     true
                 }
             }
+            getString(R.string.set_key_glass_background_style) -> {
+                preference.onPreferenceChangeListener =
+                    Preference.OnPreferenceChangeListener { _, value ->
+                        updateGlassPreferenceVisibility(value as? String ?: "preset")
+                        true
+                    }
+                val style =
+                    PreferenceManager.getDefaultSharedPreferences(requireContext())
+                        .getString(preference.key, "preset") ?: "preset"
+                updateGlassPreferenceVisibility(style)
+            }
+            getString(R.string.set_key_glass_background_color_one),
+            getString(R.string.set_key_glass_background_color_two),
+            getString(R.string.set_key_glass_background_color_three),
+            getString(R.string.set_key_glass_background_solid_color) -> {
+                val defaults = mapOf(
+                    getString(R.string.set_key_glass_background_color_one) to "#10172A",
+                    getString(R.string.set_key_glass_background_color_two) to "#36527F",
+                    getString(R.string.set_key_glass_background_color_three) to "#91578B",
+                    getString(R.string.set_key_glass_background_solid_color) to "#10172A",
+                )
+                val selectedColor =
+                    PreferenceManager.getDefaultSharedPreferences(requireContext())
+                        .getString(preference.key, defaults[preference.key]) ?: "#10172A"
+                preference.summary =
+                    getString(R.string.set_glass_background_color_summary, selectedColor)
+                preference.setOnPreferenceClickListener {
+                    showGlassColorPicker(preference)
+                    true
+                }
+            }
+
             getString(R.string.set_key_black_theme) -> {
                 L.d("Configuring black theme setting")
                 preference.onPreferenceChangeListener =
@@ -115,5 +159,80 @@ class UIPreferenceFragment : BasePreferenceFragment(R.xml.preferences_ui) {
                     }
             }
         }
+    }
+
+    private fun updateGlassPreferenceVisibility(style: String) {
+        setGlassPreferenceVisible(R.string.set_key_glass_background_preset, style == "preset")
+        val useCustomMix = style == "custom"
+        setGlassPreferenceVisible(R.string.set_key_glass_background_color_one, useCustomMix)
+        setGlassPreferenceVisible(R.string.set_key_glass_background_color_two, useCustomMix)
+        setGlassPreferenceVisible(R.string.set_key_glass_background_color_three, useCustomMix)
+        setGlassPreferenceVisible(R.string.set_key_glass_background_image, style == "image")
+        setGlassPreferenceVisible(R.string.set_key_glass_background_solid_color, style == "solid")
+        val showEffects = style != "off"
+        setGlassPreferenceVisible(R.string.set_key_glass_background_blur, showEffects)
+        setGlassPreferenceVisible(R.string.set_key_glass_background_darkness, showEffects)
+    }
+
+    private fun setGlassPreferenceVisible(keyRes: Int, visible: Boolean) {
+        findPreference<Preference>(getString(keyRes))?.isVisible = visible
+    }
+
+    private fun showGlassColorPicker(preference: Preference) {
+        val entries = resources.getStringArray(R.array.entries_glass_background_colors)
+        val colors = resources.getStringArray(R.array.values_glass_background_colors)
+        val options = entries.toMutableList().apply {
+            add(getString(R.string.set_glass_custom_color_hex))
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(preference.title)
+            .setItems(options.toTypedArray()) { _, index ->
+                if (index < colors.size) {
+                    saveGlassColor(preference, colors[index])
+                } else {
+                    showCustomGlassColorDialog(preference)
+                }
+            }
+            .setNegativeButton(R.string.lbl_cancel, null)
+            .show()
+    }
+
+    private fun showCustomGlassColorDialog(preference: Preference) {
+        val current = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            .getString(preference.key, "#10172A") ?: "#10172A"
+        val input = EditText(requireContext()).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            setSingleLine(true)
+            hint = "#RRGGBB"
+            setText(current)
+        }
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(preference.title)
+            .setMessage(R.string.set_glass_custom_color_invalid)
+            .setView(input)
+            .setNegativeButton(R.string.lbl_cancel, null)
+            .setPositiveButton(R.string.lbl_save, null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val value = input.text.toString().trim()
+                val valid = value.matches(Regex("^#[0-9A-Fa-f]{6}$")) &&
+                    runCatching { Color.parseColor(value) }.isSuccess
+                if (valid) {
+                    saveGlassColor(preference, value.uppercase(Locale.ROOT))
+                    dialog.dismiss()
+                } else {
+                    input.error = getString(R.string.set_glass_custom_color_invalid)
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun saveGlassColor(preference: Preference, color: String) {
+        PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
+            putString(preference.key, color)
+        }
+        preference.summary = getString(R.string.set_glass_background_color_summary, color)
     }
 }

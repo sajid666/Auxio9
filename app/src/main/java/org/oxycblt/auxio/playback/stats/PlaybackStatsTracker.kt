@@ -6,7 +6,16 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+ 
 package org.oxycblt.auxio.playback.stats
 
 import android.content.Context
@@ -129,16 +138,20 @@ class PlaybackStatsTracker(
         val album = metadata.albumTitle?.toString().orEmpty()
         val now = currentTimeMs()
         val editor =
-            preferences.edit()
+            preferences
+                .edit()
                 .putLong(key(id, "plays"), preferences.getLong(key(id, "plays"), 0L) + 1L)
                 .putString(key(id, "title"), title)
                 .putString(key(id, "artist"), artist)
                 .putString(key(id, "album"), album)
                 .putLong(key(id, "last"), now)
                 .putLong("backup_data_updated_at", now)
-        metadata.artworkUri?.toString()?.takeIf { it.isNotBlank() }?.let { artworkUri ->
-            editor.putString(key(id, "artwork_uri"), artworkUri)
-        }
+        metadata.artworkUri
+            ?.toString()
+            ?.takeIf { it.isNotBlank() }
+            ?.let { artworkUri ->
+                editor.putString(key(id, "artwork_uri"), artworkUri)
+            }
         for (index in HISTORY_LIMIT - 1 downTo 1) {
             preferences.getString(historyKey(index - 1), null)?.let {
                 editor.putString(historyKey(index), it)
@@ -165,24 +178,26 @@ class PlaybackStatsTracker(
                 .filter { it.startsWith(TRACK_PREFIX) && it.endsWith("_plays") }
                 .map { it.removePrefix(TRACK_PREFIX).removeSuffix("_plays") }
         return ids.mapNotNull { id ->
-            val plays = preferences.getLong(trackKey(id, "plays"), 0L)
-            if (plays <= 0L) {
-                null
-            } else {
-                TrackedSong(
-                    id = id,
-                    title = preferences.getString(trackKey(id, "title"), null).orEmpty(),
-                    artist = preferences.getString(trackKey(id, "artist"), null).orEmpty(),
-                    album = preferences.getString(trackKey(id, "album"), null).orEmpty(),
-                    plays = plays,
-                    listeningMs = preferences.getLong(trackKey(id, "time"), 0L),
-                    lastPlayedMs = preferences.getLong(trackKey(id, "last"), 0L),
-                    artworkUri = preferences.getString(trackKey(id, "artwork_uri"), null),
-                )
+                val plays = preferences.getLong(trackKey(id, "plays"), 0L)
+                if (plays <= 0L) {
+                    null
+                } else {
+                    TrackedSong(
+                        id = id,
+                        title = preferences.getString(trackKey(id, "title"), null).orEmpty(),
+                        artist = preferences.getString(trackKey(id, "artist"), null).orEmpty(),
+                        album = preferences.getString(trackKey(id, "album"), null).orEmpty(),
+                        plays = plays,
+                        listeningMs = preferences.getLong(trackKey(id, "time"), 0L),
+                        lastPlayedMs = preferences.getLong(trackKey(id, "last"), 0L),
+                        artworkUri = preferences.getString(trackKey(id, "artwork_uri"), null),
+                    )
+                }
             }
-        }.sortedWith(
-            compareByDescending<TrackedSong> { it.plays }.thenByDescending { it.lastPlayedMs }
-        ).take(limit)
+            .sortedWith(
+                compareByDescending<TrackedSong> { it.plays }.thenByDescending { it.lastPlayedMs }
+            )
+            .take(limit)
     }
 
     fun mostPlayedArtists(limit: Int = 5): List<TrackedGroup> =
@@ -191,19 +206,22 @@ class PlaybackStatsTracker(
     fun mostPlayedAlbums(limit: Int = 5): List<TrackedGroup> = groupedBy(limit) { listOf(it.album) }
 
     fun recentHistory(limit: Int = 20): List<ListeningEvent> =
-        (0 until HISTORY_LIMIT).mapNotNull { index ->
-            preferences.getString(historyKey(index), null)?.let { raw ->
-                runCatching {
-                    val event = JSONObject(raw)
-                    ListeningEvent(
-                        title = event.optString("title"),
-                        artist = event.optString("artist"),
-                        album = event.optString("album"),
-                        timestampMs = event.optLong("timestamp"),
-                    )
-                }.getOrNull()
+        (0 until HISTORY_LIMIT)
+            .mapNotNull { index ->
+                preferences.getString(historyKey(index), null)?.let { raw ->
+                    runCatching {
+                            val event = JSONObject(raw)
+                            ListeningEvent(
+                                title = event.optString("title"),
+                                artist = event.optString("artist"),
+                                album = event.optString("album"),
+                                timestampMs = event.optLong("timestamp"),
+                            )
+                        }
+                        .getOrNull()
+                }
             }
-        }.take(limit.coerceAtLeast(0))
+            .take(limit.coerceAtLeast(0))
 
     /**
      * Finalize a session after the last playback tick has been idle longer than the session gap.
@@ -224,7 +242,8 @@ class PlaybackStatsTracker(
         val completedDuration = preferences.getLong(KEY_COMPLETED_SESSION_MS, 0L)
         val completedCount = preferences.getLong(KEY_COMPLETED_SESSION_COUNT, 0L)
         val sessionDuration = preferences.getLong(KEY_SESSION_DURATION_MS, 0L)
-        preferences.edit()
+        preferences
+            .edit()
             .putLong(KEY_COMPLETED_SESSION_MS, completedDuration + sessionDuration)
             .putLong(KEY_COMPLETED_SESSION_COUNT, completedCount + 1L)
             .putLong(KEY_SESSION_START_MS, 0L)
@@ -250,9 +269,11 @@ class PlaybackStatsTracker(
                     plays = songs.sumOf { it.plays },
                     listeningMs = songs.sumOf { it.listeningMs },
                 )
-            }.sortedWith(
+            }
+            .sortedWith(
                 compareByDescending<TrackedGroup> { it.plays }.thenBy { it.name.lowercase() }
-            ).take(limit)
+            )
+            .take(limit)
     }
 
     private fun trackId(item: MediaItem): String =
