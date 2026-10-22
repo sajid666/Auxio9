@@ -31,3 +31,15 @@ jobs:
       run: ./gradlew musikr:testDebug app:testDebugUnitTest
     - name: Run Android lint
       run: ./gradlew lintDebug
+
+    - name: Print full Android lint report
+      if: always()
+      shell: bash
+      run: |
+        report="app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt"
+        if [[ -f "$report" ]]; then
+          cat "$report"
+        else
+          echo "Android lint text report was not generated at $report"
+          find app/build -type f -iname '*lint*results*' -print 2>/dev/null || true
+        fi
