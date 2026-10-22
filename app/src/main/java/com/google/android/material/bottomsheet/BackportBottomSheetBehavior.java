@@ -2418,20 +2418,20 @@ public class BackportBottomSheetBehavior<V extends View> extends CoordinatorLayo
   }
 
   private void replaceAccessibilityActionForState(
-      View child, AccessibilityActionCompat action, @State int state) {
+      View child, AccessibilityActionCompat action, @StableState int state) {
     ViewCompat.replaceAccessibilityAction(
         child, action, null, createAccessibilityViewCommandForState(state));
   }
 
   private int addAccessibilityActionForState(
-      View child, @StringRes int stringResId, @State int state) {
+      View child, @StringRes int stringResId, @StableState int state) {
     return ViewCompat.addAccessibilityAction(
         child,
         child.getResources().getString(stringResId),
         createAccessibilityViewCommandForState(state));
   }
 
-  private AccessibilityViewCommand createAccessibilityViewCommandForState(@State final int state) {
+  private AccessibilityViewCommand createAccessibilityViewCommandForState(@StableState final int state) {
     return new AccessibilityViewCommand() {
       @Override
       public boolean perform(@NonNull View view, @Nullable CommandArguments arguments) {

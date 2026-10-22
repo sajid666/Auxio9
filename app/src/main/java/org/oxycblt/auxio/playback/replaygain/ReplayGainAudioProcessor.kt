@@ -45,6 +45,7 @@ import timber.log.Timber as L
  *
  * @author Alexander Capehart (OxygenCobalt)
  */
+@androidx.annotation.OptIn(markerClass = [UnstableApi::class])
 @OptIn(markerClass = [UnstableApi::class])
 class ReplayGainAudioProcessor
 @Inject

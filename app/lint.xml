@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- These vendored Material backport classes intentionally use internal Material APIs. -->
+    <issue id="RestrictedApi">
+        <ignore path="src/main/java/com/google/android/material/bottomsheet/BackportBottomSheetBehavior.java" />
+        <ignore path="src/main/java/com/google/android/material/bottomsheet/BackportBottomSheetDialog.java" />
+    </issue>
+
+    <!-- Concrete Name and ReleaseType variants implement value equality, but lint only sees the sealed interfaces. -->
+    <issue id="DiffUtilEquals">
+        <ignore path="src/main/java/org/oxycblt/auxio/detail/list/ArtistDetailListAdapter.kt" />
+        <ignore path="src/main/java/org/oxycblt/auxio/playback/decision/ArtistPlaybackChoiceAdapter.kt" />
+        <ignore path="src/main/java/org/oxycblt/auxio/detail/decision/ArtistShowChoice.kt" />
+        <ignore path="src/main/java/org/oxycblt/auxio/playback/decision/GenrePlaybackChoiceAdapter.kt" />
+        <ignore path="src/main/java/org/oxycblt/auxio/list/recycler/ViewHolders.kt" />
+    </issue>
+</lint>
