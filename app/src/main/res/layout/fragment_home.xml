@@ -8,9 +8,21 @@
     android:background="?attr/colorSurface"
     android:transitionGroup="true">
 
+    <!-- Shared backdrop lets the translucent library header reveal the selected glass background. -->
+    <org.oxycblt.auxio.ui.GlassBackgroundView
+        android:id="@+id/home_header_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no" />
 
     <org.oxycblt.auxio.ui.CoordinatorAppBarLayout
         android:id="@+id/home_appbar"
+        android:layout_marginHorizontal="@dimen/spacing_mid_medium"
+        android:layout_marginTop="@dimen/spacing_small"
+        android:layout_marginBottom="@dimen/spacing_small"
+        android:background="@drawable/bg_glass_surface"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         style="@style/Widget.Auxio.AppBarLayout">
 
         <org.oxycblt.auxio.ui.MultiToolbar
@@ -22,6 +34,7 @@
                 android:id="@+id/home_normal_toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
                 app:layout_scrollFlags="scroll|enterAlways"
                 app:menu="@menu/toolbar_home"
                 app:title="@string/info_app_name" />
@@ -30,6 +43,7 @@
                 android:id="@+id/home_selection_toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
                 android:clickable="true"
                 android:focusable="true"
                 app:menu="@menu/toolbar_selection"
