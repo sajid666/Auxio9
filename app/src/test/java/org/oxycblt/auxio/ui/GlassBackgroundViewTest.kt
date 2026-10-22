@@ -22,6 +22,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.view.ContextThemeWrapper
 import android.view.View
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
@@ -55,7 +56,7 @@ class GlassBackgroundViewTest {
 
     @Test
     fun refreshBackgroundAppliesChangedStyleWithoutRecreatingView() {
-        val view = GlassBackgroundView(context)
+        val view = GlassBackgroundView(ContextThemeWrapper(context, R.style.Theme_Auxio_App))
         val styleKey = context.getString(R.string.set_key_glass_background_style)
         val solidColorKey = context.getString(R.string.set_key_glass_background_solid_color)
 
