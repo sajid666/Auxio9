@@ -184,4 +184,13 @@
     <integer name="cover_mode_balanced">0xA11D</integer>
     <integer name="cover_mode_high_quality">0xA11E</integer>
     <integer name="cover_mode_as_is">0xA126</integer>
+    <string name="set_key_glass_background_style" translatable="false">auxio_glass_background_style</string>
+    <string name="set_key_glass_background_preset" translatable="false">auxio_glass_background_preset</string>
+    <string name="set_key_glass_background_color_one" translatable="false">auxio_glass_background_color_one</string>
+    <string name="set_key_glass_background_color_two" translatable="false">auxio_glass_background_color_two</string>
+    <string name="set_key_glass_background_color_three" translatable="false">auxio_glass_background_color_three</string>
+    <string name="set_key_glass_background_solid_color" translatable="false">auxio_glass_background_solid_color</string>
+    <string name="set_key_glass_background_image" translatable="false">auxio_glass_background_image</string>
+    <string name="set_key_glass_background_blur" translatable="false">auxio_glass_background_blur</string>
+    <string name="set_key_glass_background_darkness" translatable="false">auxio_glass_background_darkness</string>
 </resources>

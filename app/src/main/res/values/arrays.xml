@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string-array name="entries_glass_background_style">
+        <item>Off</item>
+        <item>Gradient preset</item>
+        <item>Custom color mix</item>
+        <item>Custom image</item>
+        <item>Solid color</item>
+    </string-array>
+    <string-array name="values_glass_background_style">
+        <item>off</item>
+        <item>preset</item>
+        <item>custom</item>
+        <item>image</item>
+        <item>solid</item>
+    </string-array>
+    <string-array name="entries_glass_background_preset">
+        <item>Aurora</item>
+        <item>Sunset</item>
+        <item>Ocean</item>
+        <item>Emerald</item>
+        <item>Monochrome</item>
+    </string-array>
+    <string-array name="values_glass_background_preset">
+        <item>aurora</item>
+        <item>sunset</item>
+        <item>ocean</item>
+        <item>emerald</item>
+        <item>monochrome</item>
+    </string-array>
+    <string-array name="entries_glass_background_colors">
+        <item>Midnight Navy</item>
+        <item>Deep Blue</item>
+        <item>Indigo</item>
+        <item>Violet</item>
+        <item>Rose</item>
+        <item>Amber</item>
+        <item>Teal</item>
+        <item>Emerald</item>
+        <item>Slate</item>
+        <item>Charcoal</item>
+    </string-array>
+    <string-array name="values_glass_background_colors">
+        <item>#10172A</item>
+        <item>#274C77</item>
+        <item>#414B8A</item>
+        <item>#784F8B</item>
+        <item>#A74962</item>
+        <item>#E5A36C</item>
+        <item>#0A7185</item>
+        <item>#246851</item>
+        <item>#868B9C</item>
+        <item>#20232B</item>
+    </string-array>
+</resources>

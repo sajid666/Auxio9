@@ -28,4 +28,80 @@
         app:summary="@string/set_round_mode_desc"
         app:title="@string/set_round_mode" />
 
+
+    <PreferenceCategory
+        app:title="@string/set_glass_background_group"
+        app:summary="@string/set_glass_background_desc">
+
+        <ListPreference
+            app:key="@string/set_key_glass_background_style"
+            app:title="@string/set_glass_background_style"
+            app:summary="@string/set_glass_background_style_desc"
+            app:defaultValue="preset"
+            app:entries="@array/entries_glass_background_style"
+            app:entryValues="@array/values_glass_background_style" />
+
+        <ListPreference
+            app:key="@string/set_key_glass_background_preset"
+            app:title="@string/set_glass_background_preset"
+            app:summary="@string/set_glass_background_preset_desc"
+            app:defaultValue="aurora"
+            app:entries="@array/entries_glass_background_preset"
+            app:entryValues="@array/values_glass_background_preset" />
+
+        <ListPreference
+            app:key="@string/set_key_glass_background_color_one"
+            app:title="@string/set_glass_background_color_one"
+            app:defaultValue="#10172A"
+            app:entries="@array/entries_glass_background_colors"
+            app:entryValues="@array/values_glass_background_colors" />
+
+        <ListPreference
+            app:key="@string/set_key_glass_background_color_two"
+            app:title="@string/set_glass_background_color_two"
+            app:defaultValue="#36527F"
+            app:entries="@array/entries_glass_background_colors"
+            app:entryValues="@array/values_glass_background_colors" />
+
+        <ListPreference
+            app:key="@string/set_key_glass_background_color_three"
+            app:title="@string/set_glass_background_color_three"
+            app:defaultValue="#91578B"
+            app:entries="@array/entries_glass_background_colors"
+            app:entryValues="@array/values_glass_background_colors" />
+
+        <ListPreference
+            app:key="@string/set_key_glass_background_solid_color"
+            app:title="@string/set_glass_background_solid_color"
+            app:defaultValue="#10172A"
+            app:entries="@array/entries_glass_background_colors"
+            app:entryValues="@array/values_glass_background_colors" />
+
+        <Preference
+            app:key="@string/set_key_glass_background_image"
+            app:title="@string/set_glass_background_image"
+            app:summary="@string/set_glass_background_image_none"
+            app:persistent="false" />
+
+        <SeekBarPreference
+            app:key="@string/set_key_glass_background_blur"
+            app:title="@string/set_glass_background_blur"
+            app:summary="@string/set_glass_background_blur_desc"
+            app:defaultValue="28"
+            app:min="0"
+            app:max="48"
+            app:seekBarIncrement="4"
+            app:showSeekBarValue="true" />
+
+        <SeekBarPreference
+            app:key="@string/set_key_glass_background_darkness"
+            app:title="@string/set_glass_background_darkness"
+            app:summary="@string/set_glass_background_darkness_desc"
+            app:defaultValue="35"
+            app:min="0"
+            app:max="70"
+            app:seekBarIncrement="5"
+            app:showSeekBarValue="true" />
+
+    </PreferenceCategory>
 </PreferenceScreen>

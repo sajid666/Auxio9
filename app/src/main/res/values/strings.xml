@@ -244,6 +244,23 @@
     <string name="set_black_mode_desc">Use a pure black dark theme</string>
     <string name="set_round_mode">Round mode</string>
     <string name="set_round_mode_desc">Enable rounded corners on additional UI elements (requires album covers to be rounded)</string>
+    <string name="set_glass_background_group">Glass background</string>
+    <string name="set_glass_background_desc">Customize the background behind library lists.</string>
+    <string name="set_glass_background_style">Background style</string>
+    <string name="set_glass_background_style_desc">Choose a preset gradient, your own color mix, an image, a solid color, or turn the background off.</string>
+    <string name="set_glass_background_preset">Color preset</string>
+    <string name="set_glass_background_preset_desc">Choose a coordinated three-color gradient.</string>
+    <string name="set_glass_background_color_one">Color mix · first color</string>
+    <string name="set_glass_background_color_two">Color mix · second color</string>
+    <string name="set_glass_background_color_three">Color mix · third color</string>
+    <string name="set_glass_background_solid_color">Solid background color</string>
+    <string name="set_glass_background_image">Custom background image</string>
+    <string name="set_glass_background_image_none">No image selected. Tap to choose an image.</string>
+    <string name="set_glass_background_image_selected">Image selected. Tap to change it.</string>
+    <string name="set_glass_background_blur">Background blur</string>
+    <string name="set_glass_background_blur_desc">Adjust how softly the background is blurred. Blur requires Android 12 or later.</string>
+    <string name="set_glass_background_darkness">Dark overlay</string>
+    <string name="set_glass_background_darkness_desc">Darken the background to keep song titles readable.</string>
 
     <string name="set_personalize">Personalize</string>
     <string name="set_personalize_desc">Customize UI controls and behavior</string>

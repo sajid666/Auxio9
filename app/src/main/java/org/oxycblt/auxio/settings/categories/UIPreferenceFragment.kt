@@ -18,8 +18,11 @@
  
 package org.oxycblt.auxio.settings.categories
 
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
+import androidx.preference.PreferenceManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import org.oxycblt.auxio.R
@@ -38,6 +41,28 @@ import timber.log.Timber as L
 @AndroidEntryPoint
 class UIPreferenceFragment : BasePreferenceFragment(R.xml.preferences_ui) {
     @Inject lateinit var uiSettings: UISettings
+
+    private val glassImagePicker =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                val appContext = requireContext().applicationContext
+                try {
+                    appContext.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                } catch (exception: SecurityException) {
+                    L.w(exception, "Unable to persist background image permission")
+                }
+
+                PreferenceManager.getDefaultSharedPreferences(appContext)
+                    .edit()
+                    .putString(getString(R.string.set_key_glass_background_image), uri.toString())
+                    .apply()
+                findPreference<Preference>(getString(R.string.set_key_glass_background_image))
+                    ?.summary = getString(R.string.set_glass_background_image_selected)
+            }
+        }
 
     override fun onOpenDialogPreference(preference: WrappedDialogPreference) {
         if (preference.key == getString(R.string.set_key_accent)) {
@@ -60,6 +85,20 @@ class UIPreferenceFragment : BasePreferenceFragment(R.xml.preferences_ui) {
             getString(R.string.set_key_accent) -> {
                 L.d("Configuring accent setting")
                 preference.summary = getString(uiSettings.accent.name)
+            }
+            getString(R.string.set_key_glass_background_image) -> {
+                val imageKey = getString(R.string.set_key_glass_background_image)
+                val storedUri = PreferenceManager.getDefaultSharedPreferences(requireContext())
+                    .getString(imageKey, null)
+                preference.summary = if (storedUri.isNullOrBlank()) {
+                    getString(R.string.set_glass_background_image_none)
+                } else {
+                    getString(R.string.set_glass_background_image_selected)
+                }
+                preference.setOnPreferenceClickListener {
+                    glassImagePicker.launch(arrayOf("image/*"))
+                    true
+                }
             }
             getString(R.string.set_key_black_theme) -> {
                 L.d("Configuring black theme setting")
