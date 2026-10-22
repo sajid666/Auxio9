@@ -68,12 +68,22 @@ constructor(
     private val imageRequestId = AtomicInteger()
     private var displayedImageUri: String? = null
     private var requestedImageUri: String? = null
+    private val backgroundPreferenceKeys =
+        setOf(
+            key(R.string.set_key_glass_background_style),
+            key(R.string.set_key_glass_background_preset),
+            key(R.string.set_key_glass_background_color_one),
+            key(R.string.set_key_glass_background_color_two),
+            key(R.string.set_key_glass_background_color_three),
+            key(R.string.set_key_glass_background_solid_color),
+            key(R.string.set_key_glass_background_image),
+        )
 
     private val preferenceListener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, changedKey ->
             when (changedKey) {
-                "auxio_glass_background_blur" -> post { applyBlur() }
-                "auxio_glass_background_darkness" -> post { applyDarkness() }
+                key(R.string.set_key_glass_background_blur) -> post { applyBlur() }
+                key(R.string.set_key_glass_background_darkness) -> post { applyDarkness() }
                 in backgroundPreferenceKeys -> post { renderBackground() }
             }
         }
@@ -289,7 +299,7 @@ constructor(
         targetHeight: Int,
     ): Int {
         var sample = 1
-        while (width / (sample * 2) >= targetWidth && height / (sample * 2) >= targetHeight) {
+        while (width / (sample * 2) >= targetWidth || height / (sample * 2) >= targetHeight) {
             sample *= 2
         }
         return sample
@@ -321,17 +331,5 @@ constructor(
         val IMAGE_EXECUTOR = Executors.newSingleThreadExecutor { runnable ->
             Thread(runnable, "auxio-glass-background").apply { isDaemon = true }
         }
-        val backgroundPreferenceKeys =
-            setOf(
-                "auxio_glass_background_style",
-                "auxio_glass_background_preset",
-                "auxio_glass_background_color_one",
-                "auxio_glass_background_color_two",
-                "auxio_glass_background_color_three",
-                "auxio_glass_background_solid_color",
-                "auxio_glass_background_image",
-                "auxio_glass_background_blur",
-                "auxio_glass_background_darkness",
-            )
     }
 }

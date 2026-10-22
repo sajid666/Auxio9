@@ -81,6 +81,11 @@ class UIPreferenceFragment : BasePreferenceFragment(R.xml.preferences_ui) {
             }
         }
 
+    override fun onResume() {
+        super.onResume()
+        updateGlassColorSummaries()
+    }
+
     override fun onOpenDialogPreference(preference: WrappedDialogPreference) {
         if (preference.key == getString(R.string.set_key_accent)) {
             L.d("Navigating to accent dialog")
@@ -168,7 +173,25 @@ class UIPreferenceFragment : BasePreferenceFragment(R.xml.preferences_ui) {
         }
     }
 
+    private fun updateGlassColorSummaries() {
+        val preferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val colorPreferences =
+            listOf(
+                R.string.set_key_glass_background_color_one to "#10172A",
+                R.string.set_key_glass_background_color_two to "#36527F",
+                R.string.set_key_glass_background_color_three to "#91578B",
+                R.string.set_key_glass_background_solid_color to "#10172A",
+            )
+        colorPreferences.forEach { (keyRes, fallback) ->
+            val key = getString(keyRes)
+            val selectedColor = preferences.getString(key, fallback) ?: fallback
+            findPreference<Preference>(key)?.summary =
+                getString(R.string.set_glass_background_color_summary, selectedColor)
+        }
+    }
+
     private fun updateGlassPreferenceVisibility(style: String) {
+        updateGlassColorSummaries()
         setGlassPreferenceVisible(R.string.set_key_glass_background_preset, style == "preset")
         val useCustomMix = style == "custom"
         setGlassPreferenceVisible(R.string.set_key_glass_background_color_one, useCustomMix)
