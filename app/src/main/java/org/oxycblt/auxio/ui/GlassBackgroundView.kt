@@ -66,11 +66,15 @@ constructor(
             isFocusable = false
         }
     private val imageRequestId = AtomicInteger()
+    private var displayedImageUri: String? = null
+    private var requestedImageUri: String? = null
 
     private val preferenceListener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, changedKey ->
-            if (changedKey in backgroundPreferenceKeys) {
-                post { renderBackground() }
+            when (changedKey) {
+                "auxio_glass_background_blur" -> post { applyBlur() }
+                "auxio_glass_background_darkness" -> post { applyDarkness() }
+                in backgroundPreferenceKeys -> post { renderBackground() }
             }
         }
 
@@ -91,6 +95,7 @@ constructor(
     override fun onDetachedFromWindow() {
         preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
         imageRequestId.incrementAndGet()
+        requestedImageUri = null
         super.onDetachedFromWindow()
     }
 
@@ -98,16 +103,29 @@ constructor(
         val style =
             preferences.getString(key(R.string.set_key_glass_background_style), "preset")
                 ?: "preset"
+        val selectedUri =
+            if (style == "image") {
+                preferences.getString(key(R.string.set_key_glass_background_image), null)
+            } else {
+                null
+            }
+
         if (style == "off") {
             visibility = View.GONE
-            imageRequestId.incrementAndGet()
+            clearSelectedImage()
             return
         }
-        visibility = View.VISIBLE
+        if (style == "image" && selectedUri.isNullOrBlank()) {
+            visibility = View.GONE
+            imageView.background = createGradient(GlassBackgroundPalette.colorsForPreset("aurora"))
+            clearSelectedImage()
+            applyBlur()
+            applyDarkness()
+            return
+        }
 
-        imageView.setImageDrawable(null)
-        imageView.background = null
-        val gradient =
+        visibility = View.VISIBLE
+        val background =
             when (style) {
                 "preset" ->
                     createGradient(
@@ -142,23 +160,28 @@ constructor(
                     )
                 else -> createGradient(GlassBackgroundPalette.colorsForPreset("aurora"))
             }
-        imageView.background = gradient
+        imageView.background = background
 
         applyBlur()
         applyDarkness()
 
         if (style == "image") {
-            val selectedUri =
-                preferences.getString(key(R.string.set_key_glass_background_image), null)
-            if (selectedUri.isNullOrBlank()) {
-                visibility = View.GONE
-                imageRequestId.incrementAndGet()
-                return
+            val uriString = selectedUri ?: return
+            if (uriString != displayedImageUri && uriString != requestedImageUri) {
+                imageView.setImageDrawable(null)
+                displayedImageUri = null
+                loadSelectedImage(uriString)
             }
-            loadSelectedImage(selectedUri)
         } else {
-            imageRequestId.incrementAndGet()
+            clearSelectedImage()
         }
+    }
+
+    private fun clearSelectedImage() {
+        imageRequestId.incrementAndGet()
+        requestedImageUri = null
+        displayedImageUri = null
+        imageView.setImageDrawable(null)
     }
 
     private fun createGradient(colors: List<String>): GradientDrawable =
@@ -190,8 +213,13 @@ constructor(
     }
 
     private fun loadSelectedImage(uriString: String) {
+        if (requestedImageUri == uriString) return
         val request = imageRequestId.incrementAndGet()
-        val uri = runCatching { Uri.parse(uriString) }.getOrNull() ?: return
+        requestedImageUri = uriString
+        val uri = runCatching { Uri.parse(uriString) }.getOrNull() ?: run {
+            requestedImageUri = null
+            return
+        }
         val targetWidth =
             measuredWidth.coerceAtLeast(resources.displayMetrics.widthPixels).coerceAtLeast(1)
         val targetHeight =
@@ -232,10 +260,13 @@ constructor(
                     decoded?.recycle()
                     return@post
                 }
+                requestedImageUri = null
                 if (decoded != null) {
                     imageView.setImageBitmap(decoded)
+                    displayedImageUri = uriString
                 } else {
                     imageView.setImageDrawable(null)
+                    displayedImageUri = null
                     L.w(
                         "Could not decode selected glass background image; showing gradient fallback"
                     )
@@ -251,7 +282,7 @@ constructor(
         targetHeight: Int,
     ): Int {
         var sample = 1
-        while (width / (sample * 2) >= targetWidth || height / (sample * 2) >= targetHeight) {
+        while (width / (sample * 2) >= targetWidth && height / (sample * 2) >= targetHeight) {
             sample *= 2
         }
         return sample

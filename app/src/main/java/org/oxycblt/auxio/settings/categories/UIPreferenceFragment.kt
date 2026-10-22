@@ -19,16 +19,21 @@
 package org.oxycblt.auxio.settings.categories
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.text.InputType
 import android.widget.EditText
+import android.widget.GridLayout
+import android.widget.LinearLayout
+import android.widget.ScrollView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.edit
 import androidx.navigation.fragment.findNavController
-import androidx.preference.Preference
 import androidx.preference.ListPreference
+import androidx.preference.Preference
 import androidx.preference.PreferenceManager
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
@@ -181,20 +186,83 @@ class UIPreferenceFragment : BasePreferenceFragment(R.xml.preferences_ui) {
     private fun showGlassColorPicker(preference: Preference) {
         val entries = resources.getStringArray(R.array.entries_glass_background_colors)
         val colors = resources.getStringArray(R.array.values_glass_background_colors)
-        val options = entries.toMutableList().apply {
-            add(getString(R.string.set_glass_custom_color_hex))
+        val grid = GridLayout(requireContext()).apply {
+            columnCount = 2
+            useDefaultMargins = true
         }
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(preference.title)
-            .setItems(options.toTypedArray()) { _, index ->
-                if (index < colors.size) {
-                    saveGlassColor(preference, colors[index])
-                } else {
-                    showCustomGlassColorDialog(preference)
-                }
+        val swatches = mutableListOf<Pair<MaterialButton, String>>()
+        val density = resources.displayMetrics.density
+        val margin = (4 * density).toInt()
+        entries.forEachIndexed { index, label ->
+            val color = colors.getOrElse(index) { "#10172A" }
+            val colorInt = runCatching { Color.parseColor(color) }.getOrDefault(Color.DKGRAY)
+            val button = MaterialButton(requireContext()).apply {
+                text = "$label\n$color"
+                textSize = 12f
+                maxLines = 2
+                isAllCaps = false
+                setTextColor(if (Color.luminance(colorInt) < 0.45f) Color.WHITE else Color.BLACK)
+                backgroundTintList = ColorStateList.valueOf(colorInt)
+                contentDescription = "$label, $color"
+                insetTop = 0
+                insetBottom = 0
             }
-            .setNegativeButton(R.string.lbl_cancel, null)
-            .show()
+            val params =
+                GridLayout.LayoutParams().apply {
+                    width = 0
+                    height = (56 * density).toInt()
+                    columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
+                    setMargins(margin, margin, margin, margin)
+                }
+            grid.addView(button, params)
+            swatches.add(button to color)
+        }
+        val scroll = ScrollView(requireContext()).apply {
+            isFillViewport = true
+            addView(grid, ScrollView.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ))
+        }
+        val customButton = MaterialButton(requireContext()).apply {
+            text = getString(R.string.set_glass_custom_color_hex)
+            isAllCaps = false
+        }
+        val content =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(
+                    scroll,
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        (300 * density).toInt(),
+                    ),
+                )
+                addView(
+                    customButton,
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ),
+                )
+            }
+        val dialog =
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(preference.title)
+                .setView(content)
+                .setNegativeButton(R.string.lbl_cancel, null)
+                .create()
+        swatches.forEach { (button, color) ->
+            button.setOnClickListener {
+                saveGlassColor(preference, color)
+                dialog.dismiss()
+            }
+        }
+        customButton.setOnClickListener {
+            dialog.dismiss()
+            showCustomGlassColorDialog(preference)
+        }
+        dialog.show()
     }
 
     private fun showCustomGlassColorDialog(preference: Preference) {
