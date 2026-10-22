@@ -22,11 +22,15 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MenuItem
+import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.MenuCompat
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
+import androidx.dynamicanimation.animation.DynamicAnimation
+import androidx.dynamicanimation.animation.SpringAnimation
+import androidx.dynamicanimation.animation.SpringForce
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.activityViewModels
@@ -35,6 +39,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.transition.MaterialSharedAxis
 import dagger.hilt.android.AndroidEntryPoint
@@ -87,6 +92,7 @@ class HomeFragment : SelectionFragment<FragmentHomeBinding>() {
     private var storagePermissionLauncher: ActivityResultLauncher<String>? = null
     private var getContentLauncher: ActivityResultLauncher<String>? = null
     private var pendingImportTarget: Playlist? = null
+    private var tabSelectionListener: TabLayout.OnTabSelectedListener? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -161,6 +167,17 @@ class HomeFragment : SelectionFragment<FragmentHomeBinding>() {
         // Further initialization must be done in the function that also handles
         // re-creating the ViewPager.
         setupPager(binding)
+        tabSelectionListener =
+            object : TabLayout.OnTabSelectedListener {
+                override fun onTabSelected(tab: TabLayout.Tab) {
+                    animateTabSelection(tab.view)
+                }
+
+                override fun onTabUnselected(tab: TabLayout.Tab) = Unit
+
+                override fun onTabReselected(tab: TabLayout.Tab) = Unit
+            }
+        binding.homeTabs.addOnTabSelectedListener(requireNotNull(tabSelectionListener))
 
         // --- VIEWMODEL SETUP ---
         collect(homeModel.recreateTabs.flow, ::handleRecreate)
@@ -176,6 +193,8 @@ class HomeFragment : SelectionFragment<FragmentHomeBinding>() {
     }
 
     override fun onDestroyBinding(binding: FragmentHomeBinding) {
+        tabSelectionListener?.let(binding.homeTabs::removeOnTabSelectedListener)
+        tabSelectionListener = null
         super.onDestroyBinding(binding)
         storagePermissionLauncher = null
         binding.homeNormalToolbar.setOnMenuItemClickListener(null)
@@ -227,6 +246,29 @@ class HomeFragment : SelectionFragment<FragmentHomeBinding>() {
                 L.w("Unexpected menu item selected")
                 false
             }
+        }
+    }
+
+    private fun animateTabSelection(tabView: View) {
+        // A restrained spring gives the selected tab a tactile response without changing its layout.
+        tabView.scaleX = 0.96f
+        tabView.scaleY = 0.96f
+
+        SpringAnimation(tabView, DynamicAnimation.SCALE_X).apply {
+            spring =
+                SpringForce(1f).apply {
+                    dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+                    stiffness = SpringForce.STIFFNESS_MEDIUM
+                }
+            animateToFinalPosition(1f)
+        }
+        SpringAnimation(tabView, DynamicAnimation.SCALE_Y).apply {
+            spring =
+                SpringForce(1f).apply {
+                    dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+                    stiffness = SpringForce.STIFFNESS_MEDIUM
+                }
+            animateToFinalPosition(1f)
         }
     }
 
