@@ -20,6 +20,7 @@ package org.oxycblt.auxio.settings.categories
 
 import android.content.Intent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.edit
 import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceManager
