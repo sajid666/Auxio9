@@ -19,46 +19,59 @@
         android:id="@+id/home_appbar"
         android:layout_marginHorizontal="@dimen/spacing_mid_medium"
         android:layout_marginTop="32dp"
-        android:layout_marginBottom="@dimen/spacing_small"
-        android:background="@drawable/bg_glass_surface"
+        android:layout_marginBottom="@dimen/spacing_tiny"
+        android:background="@android:color/transparent"
         android:clipChildren="false"
         android:clipToPadding="false"
         style="@style/Widget.Auxio.AppBarLayout">
 
-        <org.oxycblt.auxio.ui.MultiToolbar
-            android:id="@+id/home_toolbar"
+        <FrameLayout
+            android:id="@+id/home_toolbar_row"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="@dimen/size_touchable_medium"
+            android:background="@drawable/bg_glass_surface"
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
-            <org.oxycblt.auxio.ui.AuxioToolbar
-                android:id="@+id/home_normal_toolbar"
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/home_tabs"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:background="@android:color/transparent"
-                app:layout_scrollFlags="scroll|enterAlways"
-                app:menu="@menu/toolbar_home"
-                app:title="@string/info_app_name" />
+                android:clipToPadding="true"
+                android:paddingEnd="@dimen/home_toolbar_action_space"
+                app:tabContentStart="@dimen/spacing_small"
+                app:tabGravity="start"
+                app:tabMode="scrollable" />
 
-            <org.oxycblt.auxio.ui.AuxioToolbar
-                android:id="@+id/home_selection_toolbar"
+            <org.oxycblt.auxio.ui.MultiToolbar
+                android:id="@+id/home_toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:clickable="true"
-                android:focusable="true"
-                app:menu="@menu/toolbar_selection"
-                app:navigationIcon="@drawable/ic_close_24" />
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:clipToPadding="false">
 
-        </org.oxycblt.auxio.ui.MultiToolbar>
+                <org.oxycblt.auxio.ui.AuxioToolbar
+                    android:id="@+id/home_normal_toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@android:color/transparent"
+                    app:menu="@menu/toolbar_home"
+                    app:title="" />
 
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/home_tabs"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            app:tabContentStart="@dimen/spacing_medium"
-            app:tabGravity="start"
-            app:tabMode="scrollable" />
+                <org.oxycblt.auxio.ui.AuxioToolbar
+                    android:id="@+id/home_selection_toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@android:color/transparent"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:menu="@menu/toolbar_selection"
+                    app:navigationIcon="@drawable/ic_close_24" />
+
+            </org.oxycblt.auxio.ui.MultiToolbar>
+
+        </FrameLayout>
 
     </org.oxycblt.auxio.ui.CoordinatorAppBarLayout>
 

@@ -38,7 +38,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.fragment.findNavController
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.transition.MaterialSharedAxis
@@ -64,7 +63,6 @@ import org.oxycblt.auxio.music.PlaylistDecision
 import org.oxycblt.auxio.music.PlaylistMessage
 import org.oxycblt.auxio.playback.PlaybackDecision
 import org.oxycblt.auxio.playback.PlaybackViewModel
-import org.oxycblt.auxio.ui.FadingToolbarOffsetListener
 import org.oxycblt.auxio.util.collect
 import org.oxycblt.auxio.util.collectImmediately
 import org.oxycblt.auxio.util.dampen
@@ -130,9 +128,6 @@ class HomeFragment : SelectionFragment<FragmentHomeBinding>() {
 
         // --- UI SETUP ---
 
-        binding.homeAppbar.addOnOffsetChangedListener(
-            FadingToolbarOffsetListener(binding.homeToolbar, binding.homeContent)
-        )
         binding.homeNormalToolbar.apply {
             setOnMenuItemClickListener(this@HomeFragment)
             MenuCompat.setGroupDividerEnabled(menu, true)
@@ -277,20 +272,8 @@ class HomeFragment : SelectionFragment<FragmentHomeBinding>() {
         binding.homePager.adapter =
             HomePagerAdapter(homeModel.currentTabTypes, childFragmentManager, viewLifecycleOwner)
 
-        val toolbarParams = binding.homeToolbar.layoutParams as AppBarLayout.LayoutParams
-        if (homeModel.currentTabTypes.size == 1) {
-            // A single tab makes the tab layout redundant, hide it and disable the collapsing
-            // behavior.
-            L.d("Single tab shown, disabling TabLayout")
-            binding.homeTabs.isVisible = false
-            binding.homeAppbar.setExpanded(true, false)
-            toolbarParams.scrollFlags = 0
-        } else {
-            binding.homeTabs.isVisible = true
-            toolbarParams.scrollFlags =
-                AppBarLayout.LayoutParams.SCROLL_FLAG_SCROLL or
-                    AppBarLayout.LayoutParams.SCROLL_FLAG_ENTER_ALWAYS
-        }
+        // Keep library tabs and toolbar actions together in one persistent glass row.
+        binding.homeTabs.isVisible = true
 
         // Set up the mapping between the ViewPager and TabLayout.
         TabLayoutMediator(
@@ -503,13 +486,11 @@ class HomeFragment : SelectionFragment<FragmentHomeBinding>() {
     private fun updateSelection(selected: List<Music>) {
         val binding = requireBinding()
         if (selected.isNotEmpty()) {
+            binding.homeTabs.isVisible = false
             binding.homeSelectionToolbar.title = getString(R.string.fmt_selected, selected.size)
-            if (binding.homeToolbar.setVisible(R.id.home_selection_toolbar)) {
-                // New selection started, show the AppBarLayout to indicate the new state.
-                L.d("Significant selection occurred, expanding AppBar")
-                binding.homeAppbar.expandWithScrollingRecycler()
-            }
+            binding.homeToolbar.setVisible(R.id.home_selection_toolbar)
         } else {
+            binding.homeTabs.isVisible = true
             binding.homeToolbar.setVisible(R.id.home_normal_toolbar)
         }
     }

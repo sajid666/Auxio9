@@ -33,7 +33,9 @@ abstract class ListFragment<in T : Music, VB : ViewBinding> :
     SelectionFragment<VB>(), SelectableListListener<T> {
     override fun onResume() {
         super.onResume()
-        view?.findViewById<GlassBackgroundView>(R.id.home_glass_background)?.refreshBackground()
+        activity
+            ?.findViewById<GlassBackgroundView>(R.id.home_header_background)
+            ?.refreshBackground()
     }
 
     /**
