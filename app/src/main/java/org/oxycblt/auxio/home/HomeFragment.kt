@@ -245,15 +245,14 @@ class HomeFragment : SelectionFragment<FragmentHomeBinding>() {
     }
 
     private fun animateTabSelection(tabView: View) {
-        // A restrained spring gives the selected tab a tactile response without changing its
-        // layout.
-        tabView.scaleX = 0.96f
-        tabView.scaleY = 0.96f
+        // A compact, damped spring adds tactile feedback without turning tab changes into a bounce.
+        tabView.scaleX = 0.975f
+        tabView.scaleY = 0.975f
 
         SpringAnimation(tabView, DynamicAnimation.SCALE_X).apply {
             spring =
                 SpringForce(1f).apply {
-                    dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+                    dampingRatio = 0.82f
                     stiffness = SpringForce.STIFFNESS_MEDIUM
                 }
             animateToFinalPosition(1f)
@@ -261,7 +260,7 @@ class HomeFragment : SelectionFragment<FragmentHomeBinding>() {
         SpringAnimation(tabView, DynamicAnimation.SCALE_Y).apply {
             spring =
                 SpringForce(1f).apply {
-                    dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+                    dampingRatio = 0.82f
                     stiffness = SpringForce.STIFFNESS_MEDIUM
                 }
             animateToFinalPosition(1f)
