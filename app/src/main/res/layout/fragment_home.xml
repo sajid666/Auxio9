@@ -23,6 +23,7 @@
         android:background="@android:color/transparent"
         android:clipChildren="false"
         android:clipToPadding="false"
+        app:liftOnScrollColor="@android:color/transparent"
         style="@style/Widget.Auxio.AppBarLayout">
 
         <FrameLayout
