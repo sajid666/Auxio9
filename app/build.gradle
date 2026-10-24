@@ -154,6 +154,9 @@ dependencies {
 
     // --- THIRD PARTY ---
 
+    // Liquid Glass player prototype (View/XML renderer).
+    implementation "com.github.QWEA0:liquidglass:v2.0.11"
+
     // Exoplayer (Vendored)
     implementation "androidx.media3:media3-exoplayer:1.11.0"
     implementation "androidx.media3:media3-decoder-ffmpeg:1.11.0"

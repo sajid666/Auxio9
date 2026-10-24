@@ -34,6 +34,8 @@ import androidx.core.view.updatePadding
 import androidx.dynamicanimation.animation.SpringForce
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import com.example.liquidglass.GlassMaterial
+import com.example.liquidglass.LiquidGlassView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlin.math.abs
 import org.oxycblt.auxio.R
@@ -135,6 +137,9 @@ class PlaybackPanelFragment :
             offscreenPageLimit = 1
         }
 
+        // Prototype the liquid lens on album art only; keep lists and controls unchanged.
+        installPlaybackGlassOverlay(binding)
+
         // Set up fast seek overlay
         binding.playbackSong.apply {
             isSelected = true
@@ -181,6 +186,48 @@ class PlaybackPanelFragment :
         collectImmediately(playbackModel.isPlaying, ::updatePlaying)
         collectImmediately(playbackModel.isShuffled, ::updateShuffled)
         collectImmediately(playbackModel.pagerQueue, ::updatePager)
+    }
+
+
+    /**
+     * Add a single liquid-glass lens above the artwork. The library captures the sibling
+     * ViewPager2 behind it; onTouchEvent returns false so swipes still reach the pager.
+     */
+    private fun installPlaybackGlassOverlay(binding: FragmentPlaybackPanelBinding) {
+        val density = resources.displayMetrics.density
+        val glass =
+            PlaybackLiquidGlassOverlay(requireContext()).apply {
+                id = View.generateViewId()
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                isClickable = false
+                isFocusable = false
+                enablePressEffect = false
+                enableDynamicBackground = true
+                enableBackdropBlur = true
+                enableChromaticAberration = false
+                enableChromaticDispersion = false
+                enableEdgeHighlight = true
+                enableSensorHighlight = true
+                enableAdaptiveTint = false
+                material = GlassMaterial.CLEAR
+                cornerRadius = 22f * density
+                bevelWidth = 16f * density
+                refractionHeight = 28f * density
+                refractionFalloff = 2f
+                dispersionStrength = 0.08f
+                blurAmount = 0.04f
+                saturation = 115f
+                collectFrameStats = false
+            }
+        val pagerId = binding.playbackPager.id
+        val params =
+            ConstraintLayout.LayoutParams(0, 0).apply {
+                startToStart = pagerId
+                endToEnd = pagerId
+                topToTop = pagerId
+                bottomToBottom = pagerId
+            }
+        binding.root.addView(glass, params)
     }
 
     // FIXME: Old code!! Maybe not necessary anymore?
@@ -397,4 +444,12 @@ class PlaybackPanelFragment :
             Direction.BACKWARDS -> playbackModel.stepBackwards()
         }
     }
+}
+
+
+/**
+ * A visual-only LiquidGlassView: let touch events fall through to the album-art ViewPager2.
+ */
+private class PlaybackLiquidGlassOverlay(context: Context) : LiquidGlassView(context) {
+    override fun onTouchEvent(event: MotionEvent): Boolean = false
 }
