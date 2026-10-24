@@ -20,10 +20,10 @@ package org.oxycblt.auxio.playback
 
 import android.content.Context
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
-import android.view.LayoutInflater
 import androidx.fragment.app.activityViewModels
 import com.example.liquidglass.GlassMaterial
 import com.example.liquidglass.LiquidGlassView

@@ -29,6 +29,7 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.Toolbar
@@ -245,6 +246,7 @@ class PlaybackPanelFragment :
      * content so text and buttons remain crisp and interactive.
      */
     private fun installPlayerSurfaceGlass(binding: FragmentPlaybackPanelBinding) {
+        val root = binding.root as? ViewGroup ?: return
         val density = resources.displayMetrics.density
         listOf(binding.playbackInfoContainer, binding.playbackControlsWrapper).forEach { surface ->
             val glass =
@@ -282,7 +284,7 @@ class PlaybackPanelFragment :
                 }
             // The glass supplies the surface; keep its previous gray fill from washing it out.
             surface.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            binding.root.addView(glass, binding.root.indexOfChild(surface), params)
+            root.addView(glass, root.indexOfChild(surface), params)
         }
     }
 
