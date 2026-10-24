@@ -23,6 +23,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.Matrix
+import android.graphics.drawable.ColorDrawable
 import android.graphics.PixelFormat
 import android.graphics.RectF
 import android.graphics.drawable.AnimationDrawable
@@ -337,6 +338,14 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
             alphaAnim = checkAlphaSpring.alpha(selectionBadge, 0.0f)
         }
         fadeAnimators = listOf(scaleAnim, alphaAnim)
+    }
+
+    /**
+     * Let a blurred artwork backdrop show through the transformed cover's transparent corners.
+     * Intended for the full-screen playback pager only.
+     */
+    fun enableTransparentImageCorners() {
+        image.background = ColorDrawable(android.graphics.Color.TRANSPARENT)
     }
 
     /**

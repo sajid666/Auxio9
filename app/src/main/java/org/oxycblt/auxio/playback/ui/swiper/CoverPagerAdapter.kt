@@ -59,6 +59,7 @@ class CoverViewHolder private constructor(private val binding: ItemCoverBinding)
      */
     fun bind(song: Song, listener: StepperOverlay.Listener) {
         binding.cover.bind(song)
+        binding.cover.enableTransparentImageCorners()
         binding.coverFastSeekOverlay.listener = listener
     }
 

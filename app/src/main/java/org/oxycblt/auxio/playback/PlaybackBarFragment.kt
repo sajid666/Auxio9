@@ -25,8 +25,10 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.activityViewModels
+import coil3.ImageLoader
 import com.example.liquidglass.GlassMaterial
 import com.example.liquidglass.LiquidGlassView
+import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
 import org.oxycblt.auxio.R
 import org.oxycblt.auxio.databinding.FragmentPlaybackBarBinding
@@ -46,6 +48,9 @@ import timber.log.Timber as L
  */
 @AndroidEntryPoint
 class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
+    @Inject lateinit var imageLoader: ImageLoader
+
+    private var artworkAmbientBackdrop: ArtworkAmbientBackdrop? = null
     private val playbackModel: PlaybackViewModel by activityViewModels()
     private val detailModel: DetailViewModel by activityViewModels()
 
@@ -91,6 +96,8 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
     }
 
     override fun onDestroyBinding(binding: FragmentPlaybackBarBinding) {
+        artworkAmbientBackdrop?.clear()
+        artworkAmbientBackdrop = null
         super.onDestroyBinding(binding)
         binding.playbackSecondaryAction.clearPendingIcon()
         // Marquee elements leak if they are not disabled when the views are destroyed.
@@ -100,6 +107,27 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
 
     private fun installMiniPlayerGlass(binding: FragmentPlaybackBarBinding) {
         val density = resources.displayMetrics.density
+        val ambient =
+            ArtworkAmbientBackdrop(
+                requireContext(),
+                imageLoader,
+                blurRadiusDp = 24f,
+                opacity = 0.72f,
+            ).apply {
+                id = View.generateViewId()
+            }
+        val ambientParams =
+            ConstraintLayout.LayoutParams(0, 0).apply {
+                startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+                endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+                topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+                bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+                val outset = (8f * density).toInt()
+                setMargins(-outset, -outset, -outset, -outset)
+            }
+        binding.root.addView(ambient, 0, ambientParams)
+        artworkAmbientBackdrop = ambient
+
         val glass =
             MiniPlayerLiquidGlassOverlay(requireContext()).apply {
                 id = View.generateViewId()
@@ -107,7 +135,7 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
                 isClickable = false
                 isFocusable = false
                 enablePressEffect = false
-                backdropSource = binding.playbackCover
+                backdropSource = ambient
                 enableDynamicBackground = true
                 enableBackdropBlur = true
                 enableChromaticAberration = false
@@ -116,13 +144,13 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
                 enableSensorHighlight = true
                 enableAdaptiveTint = false
                 material = GlassMaterial.CLEAR
-                cornerRadius = 26f * density
-                bevelWidth = 18f * density
-                refractionHeight = 34f * density
+                cornerRadius = 28f * density
+                bevelWidth = 20f * density
+                refractionHeight = 40f * density
                 refractionFalloff = 1.5f
-                dispersionStrength = 0.12f
-                blurAmount = 0.035f
-                saturation = 130f
+                dispersionStrength = 0.14f
+                blurAmount = 0.075f
+                saturation = 140f
                 collectFrameStats = false
             }
         val params =
@@ -133,7 +161,7 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
                 bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
             }
         binding.root.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-        binding.root.addView(glass, 0, params)
+        binding.root.addView(glass, 1, params)
     }
 
     private fun updateSong(song: Song?) {
@@ -145,6 +173,7 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
         val context = requireContext()
         val binding = requireBinding()
         binding.playbackCover.bind(song)
+        artworkAmbientBackdrop?.bind(song)
         binding.playbackSong.text = song.name.resolve(context)
         binding.playbackInfo.text = song.artists.resolveNames(context)
         binding.playbackProgressBar.max = song.durationMs.msToDs().toInt()
