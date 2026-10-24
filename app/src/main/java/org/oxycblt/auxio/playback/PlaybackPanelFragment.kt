@@ -142,6 +142,7 @@ class PlaybackPanelFragment :
 
         // Prototype the liquid lens on album art only; keep lists and controls unchanged.
         installPlaybackGlassOverlay(binding)
+        installPlayerSurfaceGlass(binding)
 
         // Set up fast seek overlay
         binding.playbackSong.apply {
@@ -237,6 +238,52 @@ class PlaybackPanelFragment :
         glass.elevation = binding.playbackPager.elevation + 2f * density
         binding.root.addView(glass, params)
         glass.bringToFront()
+    }
+
+    /**
+     * Extend the liquid material to the song metadata and controls. Keep each lens behind its
+     * content so text and buttons remain crisp and interactive.
+     */
+    private fun installPlayerSurfaceGlass(binding: FragmentPlaybackPanelBinding) {
+        val density = resources.displayMetrics.density
+        listOf(binding.playbackInfoContainer, binding.playbackControlsWrapper).forEach { surface ->
+            val glass =
+                PlaybackLiquidGlassOverlay(requireContext()).apply {
+                    id = View.generateViewId()
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                    isClickable = false
+                    isFocusable = false
+                    enablePressEffect = false
+                    backdropSource = binding.playbackPager
+                    enableDynamicBackground = true
+                    enableBackdropBlur = true
+                    enableChromaticAberration = false
+                    enableChromaticDispersion = true
+                    enableEdgeHighlight = true
+                    enableSensorHighlight = true
+                    enableAdaptiveTint = false
+                    material = GlassMaterial.CLEAR
+                    cornerRadius = 28f * density
+                    bevelWidth = 20f * density
+                    refractionHeight = 38f * density
+                    refractionFalloff = 1.5f
+                    dispersionStrength = 0.12f
+                    blurAmount = 0.035f
+                    saturation = 130f
+                    collectFrameStats = false
+                }
+            val surfaceId = surface.id
+            val params =
+                ConstraintLayout.LayoutParams(0, 0).apply {
+                    startToStart = surfaceId
+                    endToEnd = surfaceId
+                    topToTop = surfaceId
+                    bottomToBottom = surfaceId
+                }
+            // The glass supplies the surface; keep its previous gray fill from washing it out.
+            surface.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            binding.root.addView(glass, binding.root.indexOfChild(surface), params)
+        }
     }
 
     // FIXME: Old code!! Maybe not necessary anymore?
