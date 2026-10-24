@@ -18,9 +18,15 @@
  
 package org.oxycblt.auxio.playback
 
+import android.content.Context
 import android.os.Bundle
+import android.view.MotionEvent
+import android.view.View
+import androidx.constraintlayout.widget.ConstraintLayout
 import android.view.LayoutInflater
 import androidx.fragment.app.activityViewModels
+import com.example.liquidglass.GlassMaterial
+import com.example.liquidglass.LiquidGlassView
 import dagger.hilt.android.AndroidEntryPoint
 import org.oxycblt.auxio.R
 import org.oxycblt.auxio.databinding.FragmentPlaybackBarBinding
@@ -61,6 +67,10 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
             }
         }
 
+        // Add the liquid material behind the compact player content. The cover is its color source;
+        // the transparent surface lets the lens pick up that color without covering the controls.
+        installMiniPlayerGlass(binding)
+
         // Set up marquee on song information
         binding.playbackSong.isSelected = true
         binding.playbackInfo.isSelected = true
@@ -86,6 +96,44 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
         // Marquee elements leak if they are not disabled when the views are destroyed.
         binding.playbackSong.isSelected = false
         binding.playbackInfo.isSelected = false
+    }
+
+    private fun installMiniPlayerGlass(binding: FragmentPlaybackBarBinding) {
+        val density = resources.displayMetrics.density
+        val glass =
+            MiniPlayerLiquidGlassOverlay(requireContext()).apply {
+                id = View.generateViewId()
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                isClickable = false
+                isFocusable = false
+                enablePressEffect = false
+                backdropSource = binding.playbackCover
+                enableDynamicBackground = true
+                enableBackdropBlur = true
+                enableChromaticAberration = false
+                enableChromaticDispersion = true
+                enableEdgeHighlight = true
+                enableSensorHighlight = true
+                enableAdaptiveTint = false
+                material = GlassMaterial.CLEAR
+                cornerRadius = 26f * density
+                bevelWidth = 18f * density
+                refractionHeight = 34f * density
+                refractionFalloff = 1.5f
+                dispersionStrength = 0.12f
+                blurAmount = 0.035f
+                saturation = 130f
+                collectFrameStats = false
+            }
+        val params =
+            ConstraintLayout.LayoutParams(0, 0).apply {
+                startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+                endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+                topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+                bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+            }
+        binding.root.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        binding.root.addView(glass, 0, params)
     }
 
     private fun updateSong(song: Song?) {
@@ -155,4 +203,10 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
             }
         }
     }
+}
+
+
+/** A visual-only lens that does not consume taps intended for the mini-player controls. */
+private class MiniPlayerLiquidGlassOverlay(context: Context) : LiquidGlassView(context) {
+    override fun onTouchEvent(event: MotionEvent): Boolean = false
 }
