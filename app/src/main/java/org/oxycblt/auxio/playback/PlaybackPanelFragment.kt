@@ -20,16 +20,19 @@ package org.oxycblt.auxio.playback
 
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.media.audiofx.AudioEffect
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.updatePadding
 import androidx.dynamicanimation.animation.SpringForce
 import androidx.fragment.app.activityViewModels
@@ -187,7 +190,6 @@ class PlaybackPanelFragment :
         collectImmediately(playbackModel.isShuffled, ::updateShuffled)
         collectImmediately(playbackModel.pagerQueue, ::updatePager)
     }
-
 
     /**
      * Add a single liquid-glass lens above the artwork. The library captures the sibling
@@ -445,7 +447,6 @@ class PlaybackPanelFragment :
         }
     }
 }
-
 
 /**
  * A visual-only LiquidGlassView: let touch events fall through to the album-art ViewPager2.
