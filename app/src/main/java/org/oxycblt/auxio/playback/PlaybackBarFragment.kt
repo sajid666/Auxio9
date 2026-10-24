@@ -28,8 +28,8 @@ import androidx.fragment.app.activityViewModels
 import coil3.ImageLoader
 import com.example.liquidglass.GlassMaterial
 import com.example.liquidglass.LiquidGlassView
-import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import org.oxycblt.auxio.R
 import org.oxycblt.auxio.databinding.FragmentPlaybackBarBinding
 import org.oxycblt.auxio.detail.DetailViewModel
@@ -109,8 +109,7 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
         val density = resources.displayMetrics.density
         val ambient =
             ArtworkAmbientBackdrop(
-                requireContext(),
-                imageLoader,
+                requireContext(), imageLoader,
                 blurRadiusDp = 24f,
                 opacity = 0.72f,
             ).apply {
@@ -165,6 +164,7 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
     }
 
     private fun updateSong(song: Song?) {
+        artworkAmbientBackdrop?.bind(song)
         if (song == null) {
             // Nothing to do.
             return
@@ -173,7 +173,6 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
         val context = requireContext()
         val binding = requireBinding()
         binding.playbackCover.bind(song)
-        artworkAmbientBackdrop?.bind(song)
         binding.playbackSong.text = song.name.resolve(context)
         binding.playbackInfo.text = song.artists.resolveNames(context)
         binding.playbackProgressBar.max = song.durationMs.msToDs().toInt()

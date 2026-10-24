@@ -23,10 +23,10 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.Matrix
-import android.graphics.drawable.ColorDrawable
 import android.graphics.PixelFormat
 import android.graphics.RectF
 import android.graphics.drawable.AnimationDrawable
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.util.Size

@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
+ 
 package org.oxycblt.auxio.playback
 
 import android.content.Context
@@ -34,7 +34,8 @@ import org.oxycblt.musikr.Song
  * A blurred, song-specific artwork layer sampled by the player glass surfaces.
  *
  * On Android 12 and newer the blur is applied by RenderEffect. On older versions the image remains
- * softly translucent, so it still provides album-derived color without requiring extra dependencies.
+ * softly translucent, so it still provides album-derived color without requiring extra
+ * dependencies.
  */
 internal class ArtworkAmbientBackdrop(
     context: Context,

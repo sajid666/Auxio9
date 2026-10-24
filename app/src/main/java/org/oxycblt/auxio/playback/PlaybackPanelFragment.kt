@@ -41,8 +41,8 @@ import androidx.fragment.app.viewModels
 import coil3.ImageLoader
 import com.example.liquidglass.GlassMaterial
 import com.example.liquidglass.LiquidGlassView
-import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlin.math.abs
 import org.oxycblt.auxio.R
 import org.oxycblt.auxio.databinding.FragmentPlaybackPanelBinding
@@ -207,8 +207,7 @@ class PlaybackPanelFragment :
         val pager = binding.playbackPager
         val backdrop =
             ArtworkAmbientBackdrop(
-                requireContext(),
-                imageLoader,
+                requireContext(), imageLoader,
                 blurRadiusDp = 34f,
                 opacity = 0.82f,
             ).apply {
@@ -288,7 +287,7 @@ class PlaybackPanelFragment :
             root.findViewById<ViewGroup>(R.id.playback_controls_wrapper)
                 ?: root.findViewById<ViewGroup>(R.id.playback_controls_container)
                 ?: return
-        val backdropSource = artworkAmbientBackdrop ?: binding.playbackPager
+        val glassBackdropSource = artworkAmbientBackdrop ?: binding.playbackPager
         val surfaces: List<ViewGroup> = listOf(binding.playbackInfoContainer, controlsSurface)
         val density = resources.displayMetrics.density
         surfaces.forEach { surface ->
@@ -299,7 +298,7 @@ class PlaybackPanelFragment :
                     isClickable = false
                     isFocusable = false
                     enablePressEffect = false
-                    backdropSource = backdropSource
+                    backdropSource = glassBackdropSource
                     enableDynamicBackground = true
                     enableBackdropBlur = true
                     enableChromaticAberration = false
@@ -408,6 +407,7 @@ class PlaybackPanelFragment :
     }
 
     private fun updateSong(song: Song?) {
+        artworkAmbientBackdrop?.bind(song)
         if (song == null) {
             // Nothing to do.
             return
@@ -415,7 +415,6 @@ class PlaybackPanelFragment :
 
         val binding = requireBinding()
         val context = requireContext()
-        artworkAmbientBackdrop?.bind(song)
         L.d("Updating song display: $song")
         binding.playbackSong.text = song.name.resolve(context)
         binding.playbackArtist.text = song.artists.resolveNames(context)
