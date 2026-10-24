@@ -205,7 +205,6 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
     }
 }
 
-
 /** A visual-only lens that does not consume taps intended for the mini-player controls. */
 private class MiniPlayerLiquidGlassOverlay(context: Context) : LiquidGlassView(context) {
     override fun onTouchEvent(event: MotionEvent): Boolean = false

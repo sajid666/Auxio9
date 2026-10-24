@@ -246,9 +246,14 @@ class PlaybackPanelFragment :
      * content so text and buttons remain crisp and interactive.
      */
     private fun installPlayerSurfaceGlass(binding: FragmentPlaybackPanelBinding) {
-        val root = binding.root as? ViewGroup ?: return
+        val root = binding.root
+        val controlsSurface: ViewGroup =
+            root.findViewById<ViewGroup>(R.id.playback_controls_wrapper)
+                ?: root.findViewById<ViewGroup>(R.id.playback_controls_container)
+                ?: return
+        val surfaces: List<ViewGroup> = listOf(binding.playbackInfoContainer, controlsSurface)
         val density = resources.displayMetrics.density
-        listOf(binding.playbackInfoContainer, binding.playbackControlsWrapper).forEach { surface ->
+        surfaces.forEach { surface ->
             val glass =
                 PlaybackLiquidGlassOverlay(requireContext()).apply {
                     id = View.generateViewId()
