@@ -192,8 +192,8 @@ class PlaybackPanelFragment :
     }
 
     /**
-     * Add a single liquid-glass lens above the artwork. The library captures the sibling
-     * ViewPager2 behind it; onTouchEvent returns false so swipes still reach the pager.
+     * Add a single liquid-glass lens above the artwork. The library captures the sibling ViewPager2
+     * behind it; onTouchEvent returns false so swipes still reach the pager.
      */
     private fun installPlaybackGlassOverlay(binding: FragmentPlaybackPanelBinding) {
         val density = resources.displayMetrics.density
@@ -448,9 +448,7 @@ class PlaybackPanelFragment :
     }
 }
 
-/**
- * A visual-only LiquidGlassView: let touch events fall through to the album-art ViewPager2.
- */
+/** A visual-only LiquidGlassView: let touch events fall through to the album-art ViewPager2. */
 private class PlaybackLiquidGlassOverlay(context: Context) : LiquidGlassView(context) {
     override fun onTouchEvent(event: MotionEvent): Boolean = false
 }
