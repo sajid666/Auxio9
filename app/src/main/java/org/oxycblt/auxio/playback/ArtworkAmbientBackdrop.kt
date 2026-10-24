@@ -27,6 +27,7 @@ import android.widget.ImageView
 import androidx.appcompat.widget.AppCompatImageView
 import coil3.ImageLoader
 import coil3.request.ImageRequest
+import coil3.request.target
 import coil3.util.CoilUtils
 import org.oxycblt.musikr.Song
 
