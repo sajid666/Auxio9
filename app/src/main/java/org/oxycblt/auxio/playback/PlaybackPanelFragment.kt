@@ -207,12 +207,14 @@ class PlaybackPanelFragment :
         val pager = binding.playbackPager
         val backdrop =
             ArtworkAmbientBackdrop(
-                requireContext(), imageLoader,
-                blurRadiusDp = 34f,
-                opacity = 0.82f,
-            ).apply {
-                id = View.generateViewId()
-            }
+                    requireContext(),
+                    imageLoader,
+                    blurRadiusDp = 34f,
+                    opacity = 0.82f,
+                )
+                .apply {
+                    id = View.generateViewId()
+                }
         val density = resources.displayMetrics.density
         val outset = (22f * density).toInt()
         val params =

@@ -109,12 +109,14 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
         val density = resources.displayMetrics.density
         val ambient =
             ArtworkAmbientBackdrop(
-                requireContext(), imageLoader,
-                blurRadiusDp = 24f,
-                opacity = 0.72f,
-            ).apply {
-                id = View.generateViewId()
-            }
+                    requireContext(),
+                    imageLoader,
+                    blurRadiusDp = 24f,
+                    opacity = 0.72f,
+                )
+                .apply {
+                    id = View.generateViewId()
+                }
         val ambientParams =
             ConstraintLayout.LayoutParams(0, 0).apply {
                 startToStart = ConstraintLayout.LayoutParams.PARENT_ID
