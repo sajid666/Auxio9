@@ -204,21 +204,24 @@ class PlaybackPanelFragment :
                 isClickable = false
                 isFocusable = false
                 enablePressEffect = false
+                // Sample the artwork itself, not the whole player root; this makes the lens's
+                // input explicit and avoids unrelated controls changing the sampled backdrop.
+                backdropSource = binding.playbackPager
                 enableDynamicBackground = true
                 enableBackdropBlur = true
                 enableChromaticAberration = false
-                enableChromaticDispersion = false
+                enableChromaticDispersion = true
                 enableEdgeHighlight = true
                 enableSensorHighlight = true
                 enableAdaptiveTint = false
                 material = GlassMaterial.CLEAR
-                cornerRadius = 22f * density
-                bevelWidth = 16f * density
-                refractionHeight = 28f * density
-                refractionFalloff = 2f
-                dispersionStrength = 0.08f
-                blurAmount = 0.04f
-                saturation = 115f
+                cornerRadius = 30f * density
+                bevelWidth = 32f * density
+                refractionHeight = 72f * density
+                refractionFalloff = 1.25f
+                dispersionStrength = 0.22f
+                blurAmount = 0.055f
+                saturation = 125f
                 collectFrameStats = false
             }
         val pagerId = binding.playbackPager.id
@@ -229,7 +232,11 @@ class PlaybackPanelFragment :
                 topToTop = pagerId
                 bottomToBottom = pagerId
             }
+        // ViewPager2 can carry its own outline/elevation. Keep the lens above it so it
+        // actually composites over the moving artwork instead of being obscured.
+        glass.elevation = binding.playbackPager.elevation + 2f * density
         binding.root.addView(glass, params)
+        glass.bringToFront()
     }
 
     // FIXME: Old code!! Maybe not necessary anymore?
