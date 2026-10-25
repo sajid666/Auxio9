@@ -320,8 +320,9 @@ class PlaybackPanelFragment :
     }
 
     /**
-     * Extend the liquid material to the song metadata and controls. Keep each lens behind its
-     * content so text and buttons remain crisp and interactive.
+     * Extend the liquid material to the song metadata and controls. In the stacked portrait
+     * layout, use one shared lens across metadata, seek bar, and controls so their glass edges
+     * do not appear as separate cards. Keep separate lenses in the side-by-side layout.
      */
     private fun installPlayerSurfaceGlass(binding: FragmentPlaybackPanelBinding) {
         val root = binding.root
@@ -330,45 +331,72 @@ class PlaybackPanelFragment :
                 ?: root.findViewById<ViewGroup>(R.id.playback_controls_container)
                 ?: return
         val glassBackdropSource = playerSurfaceBackdrop ?: binding.playbackPager
-        val surfaces: List<ViewGroup> = listOf(binding.playbackInfoContainer, controlsSurface)
         val density = resources.displayMetrics.density
-        surfaces.forEach { surface ->
-            val glass =
-                PlaybackLiquidGlassOverlay(requireContext()).apply {
-                    id = View.generateViewId()
-                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                    isClickable = false
-                    isFocusable = false
-                    enablePressEffect = false
-                    backdropSource = glassBackdropSource
-                    enableDynamicBackground = true
-                    enableBackdropBlur = true
-                    enableChromaticAberration = false
-                    enableChromaticDispersion = true
-                    enableEdgeHighlight = true
-                    enableSensorHighlight = true
-                    enableAdaptiveTint = false
-                    material = GlassMaterial.CLEAR
-                    cornerRadius = 28f * density
-                    bevelWidth = 26f * density
-                    refractionHeight = 50f * density
-                    refractionFalloff = 1.45f
-                    dispersionStrength = 0.16f
-                    blurAmount = 0.09f
-                    saturation = 135f
-                    collectFrameStats = false
-                }
-            val surfaceId = surface.id
+        val pagerParams =
+            root.findViewById<View>(R.id.playback_pager)?.layoutParams
+                as? ConstraintLayout.LayoutParams
+        val isStackedPortraitLayout =
+            pagerParams?.bottomToTop == binding.playbackInfoContainer.id
+
+        fun createGlass(): PlaybackLiquidGlassOverlay =
+            PlaybackLiquidGlassOverlay(requireContext()).apply {
+                id = View.generateViewId()
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                isClickable = false
+                isFocusable = false
+                enablePressEffect = false
+                backdropSource = glassBackdropSource
+                enableDynamicBackground = true
+                enableBackdropBlur = true
+                enableChromaticAberration = false
+                enableChromaticDispersion = true
+                enableEdgeHighlight = true
+                enableSensorHighlight = true
+                enableAdaptiveTint = false
+                material = GlassMaterial.CLEAR
+                cornerRadius = 28f * density
+                bevelWidth = 26f * density
+                refractionHeight = 50f * density
+                refractionFalloff = 1.45f
+                dispersionStrength = 0.16f
+                blurAmount = 0.09f
+                saturation = 135f
+                collectFrameStats = false
+            }
+
+        // The glass supplies the surface; keep the old gray fills from washing it out.
+        binding.playbackInfoContainer.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        controlsSurface.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+
+        if (isStackedPortraitLayout) {
+            // The seek bar is between these anchors and remains drawn above the shared lens.
+            val glass = createGlass()
             val params =
                 ConstraintLayout.LayoutParams(0, 0).apply {
-                    startToStart = surfaceId
-                    endToEnd = surfaceId
-                    topToTop = surfaceId
-                    bottomToBottom = surfaceId
+                    startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+                    endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+                    topToTop = binding.playbackInfoContainer.id
+                    bottomToBottom = controlsSurface.id
+                    val sideInset = resources.getDimensionPixelSize(R.dimen.spacing_medium)
+                    marginStart = sideInset
+                    marginEnd = sideInset
                 }
-            // The glass supplies the surface; keep its previous gray fill from washing it out.
-            surface.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            root.addView(glass, root.indexOfChild(surface), params)
+            root.addView(glass, root.indexOfChild(binding.playbackInfoContainer), params)
+        } else {
+            // Preserve the established side-by-side layout: a single tall lens there would overlap
+            // the artwork pager.
+            listOf(binding.playbackInfoContainer, controlsSurface).forEach { surface ->
+                val glass = createGlass()
+                val surfaceId = surface.id
+                val params =
+                    ConstraintLayout.LayoutParams(0, 0).apply {
+                        startToStart = surfaceId
+                        endToEnd = surfaceId
+                        topToTop = surfaceId
+                        bottomToBottom = surfaceId
+                    }
+                root.addView(glass, root.indexOfChild(surface), params)
+            }
         }
     }
 
