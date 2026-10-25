@@ -107,10 +107,7 @@ class ImageSettingsImpl @Inject constructor(@ApplicationContext context: Context
             val coverModeKey = getString(R.string.set_key_cover_mode)
             val currentCoverMode = sharedPreferences.getInt(coverModeKey, Int.MIN_VALUE)
             sharedPreferences.edit {
-                if (
-                    !hasLegacyCoverSettings &&
-                        currentCoverMode == CoverMode.BALANCED.intCode
-                ) {
+                if (!hasLegacyCoverSettings && currentCoverMode == CoverMode.BALANCED.intCode) {
                     putInt(coverModeKey, CoverMode.AS_IS.intCode)
                 }
                 putBoolean(KEY_IMAGE_DEFAULTS_MIGRATED, true)
