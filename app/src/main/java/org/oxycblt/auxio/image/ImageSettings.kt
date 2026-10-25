@@ -49,12 +49,18 @@ class ImageSettingsImpl @Inject constructor(@ApplicationContext context: Context
         get() =
             CoverMode.fromIntCode(
                 sharedPreferences.getInt(getString(R.string.set_key_cover_mode), Int.MIN_VALUE)
-            ) ?: CoverMode.BALANCED
+            ) ?: CoverMode.AS_IS
 
     override val forceSquareCovers: Boolean
-        get() = sharedPreferences.getBoolean(getString(R.string.set_key_square_covers), false)
+        get() = sharedPreferences.getBoolean(getString(R.string.set_key_square_covers), true)
 
     override fun migrate() {
+        // Capture whether the install has pre-3.0 cover preferences before migrating them.
+        val hasLegacyCoverSettings =
+            sharedPreferences.contains(OLD_KEY_SHOW_COVERS) ||
+                sharedPreferences.contains(OLD_KEY_QUALITY_COVERS) ||
+                sharedPreferences.contains(OLD_KEY_COVER_MODE)
+
         // Show album covers and Ignore MediaStore covers were unified in 3.0.0
         if (
             sharedPreferences.contains(OLD_KEY_SHOW_COVERS) ||
@@ -94,6 +100,22 @@ class ImageSettingsImpl @Inject constructor(@ApplicationContext context: Context
                 remove(OLD_KEY_COVER_MODE)
             }
         }
+        // The old IntListPreference persisted its XML default on first opening the settings screen.
+        // Replace that previous default once, while preserving migrated legacy choices and any
+        // non-default cover mode the user selected.
+        if (!sharedPreferences.getBoolean(KEY_IMAGE_DEFAULTS_MIGRATED, false)) {
+            val coverModeKey = getString(R.string.set_key_cover_mode)
+            val currentCoverMode = sharedPreferences.getInt(coverModeKey, Int.MIN_VALUE)
+            sharedPreferences.edit {
+                if (
+                    !hasLegacyCoverSettings &&
+                        currentCoverMode == CoverMode.BALANCED.intCode
+                ) {
+                    putInt(coverModeKey, CoverMode.AS_IS.intCode)
+                }
+                putBoolean(KEY_IMAGE_DEFAULTS_MIGRATED, true)
+            }
+        }
     }
 
     override fun onSettingChanged(key: String, listener: ImageSettings.Listener) {
@@ -110,5 +132,6 @@ class ImageSettingsImpl @Inject constructor(@ApplicationContext context: Context
         const val OLD_KEY_SHOW_COVERS = "KEY_SHOW_COVERS"
         const val OLD_KEY_QUALITY_COVERS = "KEY_QUALITY_COVERS"
         const val OLD_KEY_COVER_MODE = "auxio_cover_mode"
+        const val KEY_IMAGE_DEFAULTS_MIGRATED = "auxio_image_defaults_as_is_migrated"
     }
 }

@@ -19,7 +19,6 @@
 package org.oxycblt.auxio.playback
 
 import android.content.Context
-import android.graphics.drawable.LayerDrawable
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View

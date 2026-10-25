@@ -115,6 +115,12 @@ class PlaybackPanelFragment :
         binding.root.setOnApplyWindowInsetsListener { view, insets ->
             val bars = insets.systemBarInsetsCompat
             view.updatePadding(bottom = bars.bottom)
+            playerSurfaceBackdrop?.let { backdrop ->
+                (backdrop.layoutParams as? ConstraintLayout.LayoutParams)?.let { params ->
+                    params.bottomMargin = -bars.bottom
+                    backdrop.layoutParams = params
+                }
+            }
             insets
         }
 
@@ -207,6 +213,8 @@ class PlaybackPanelFragment :
     private fun installArtworkAmbientBackdrop(binding: FragmentPlaybackPanelBinding) {
         val pager = binding.playbackPager
         val root = binding.root
+        // The backdrop must be able to draw into the bottom system-bar padding.
+        root.clipToPadding = false
         val density = resources.displayMetrics.density
 
         // The expanded player needs its own full-width color source. The cover-specific layer below
@@ -215,10 +223,11 @@ class PlaybackPanelFragment :
             ArtworkAmbientBackdrop(
                     requireContext(),
                     imageLoader,
-                    // Diffuse the album colors more broadly and lower their strength so
-                    // the toolbar and metadata stay readable over the full-screen backdrop.
+                    // With RenderEffect available, keep the artwork opaque so the transparent
+                    // sheet cannot blend the underlying library into a gray filter. Older Android
+                    // versions retain lower opacity because this backdrop cannot be blurred there.
                     blurRadiusDp = 68f,
-                    opacity = 0.52f,
+                    opacity = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 1f else 0.52f,
                 )
                 .apply {
                     id = View.generateViewId()
@@ -231,6 +240,7 @@ class PlaybackPanelFragment :
                 // edge, preventing a flat strip above the player backdrop.
                 topToTop = ConstraintLayout.LayoutParams.PARENT_ID
                 bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+                bottomMargin = -root.paddingBottom
             }
         root.addView(surfaceBackdrop, 0, surfaceBackdropParams)
         playerSurfaceBackdrop = surfaceBackdrop
