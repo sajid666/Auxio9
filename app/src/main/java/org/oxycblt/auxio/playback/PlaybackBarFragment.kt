@@ -107,7 +107,7 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
 
     private fun installMiniPlayerGlass(binding: FragmentPlaybackBarBinding) {
         val density = resources.displayMetrics.density
-        val cornerRadius = 28f * density
+        val cornerRadiusPx = 28f * density
         val ambient =
             ArtworkAmbientBackdrop(
                     requireContext(),
@@ -120,7 +120,7 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
                     background =
                         android.graphics.drawable.GradientDrawable().apply {
                             shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-                            cornerRadius = cornerRadius
+                            this.cornerRadius = cornerRadiusPx
                         }
                     clipToOutline = true
                 }
@@ -150,7 +150,7 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
                 enableSensorHighlight = true
                 enableAdaptiveTint = false
                 material = GlassMaterial.CLEAR
-                cornerRadius = 28f * density
+                cornerRadius = cornerRadiusPx
                 bevelWidth = 16f * density
                 refractionHeight = 34f * density
                 refractionFalloff = 1.5f
