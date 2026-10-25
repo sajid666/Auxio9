@@ -257,14 +257,6 @@ class PlaybackPanelFragment :
         artworkAmbientBackdrop = artworkBackdrop
     }
 
-    override fun onDestroyBinding(binding: FragmentPlaybackPanelBinding) {
-        artworkAmbientBackdrop?.clear()
-        artworkAmbientBackdrop = null
-        playerSurfaceBackdrop?.clear()
-        playerSurfaceBackdrop = null
-        super.onDestroyBinding(binding)
-    }
-
     /**
      * Add a single liquid-glass lens above the artwork. The library captures the sibling ViewPager2
      * behind it; onTouchEvent returns false so swipes still reach the pager.
@@ -404,6 +396,8 @@ class PlaybackPanelFragment :
     override fun onDestroyBinding(binding: FragmentPlaybackPanelBinding) {
         artworkAmbientBackdrop?.clear()
         artworkAmbientBackdrop = null
+        playerSurfaceBackdrop?.clear()
+        playerSurfaceBackdrop = null
         equalizerLauncher = null
         binding.playbackRepeat.clearPendingIcon()
         binding.playbackSong.isSelected = false
