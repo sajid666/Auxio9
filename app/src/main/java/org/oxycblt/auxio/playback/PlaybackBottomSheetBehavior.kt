@@ -81,10 +81,11 @@ class PlaybackBottomSheetBehavior<V : View>(context: Context, attributeSet: Attr
     override fun createBackground(context: Context, uiSettings: UISettings) =
         LayerDrawable(
             arrayOf(
-                // Add another colored background so that there is always an obscuring
-                // element even as the actual "background" element is faded out.
+                // Keep the backing layer transparent so the glass mini-player can reveal its
+                // artwork backdrop while collapsed. The main shape drawable remains in place
+                // for the expanded player and retains the existing sheet gesture behavior.
                 MaterialShapeDrawable(sheetBackgroundDrawable.shapeAppearanceModel).apply {
-                    fillColor = sheetBackgroundDrawable.fillColor
+                    fillColor = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
                 },
                 sheetBackgroundDrawable,
             )
