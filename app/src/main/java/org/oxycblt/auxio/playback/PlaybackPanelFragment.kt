@@ -215,8 +215,10 @@ class PlaybackPanelFragment :
             ArtworkAmbientBackdrop(
                     requireContext(),
                     imageLoader,
-                    blurRadiusDp = 52f,
-                    opacity = 0.72f,
+                    // Diffuse the album colors more broadly and lower their strength so
+                    // the toolbar and metadata stay readable over the full-screen backdrop.
+                    blurRadiusDp = 68f,
+                    opacity = 0.52f,
                 )
                 .apply {
                     id = View.generateViewId()
