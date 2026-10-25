@@ -225,7 +225,9 @@ class PlaybackPanelFragment :
             ConstraintLayout.LayoutParams(0, 0).apply {
                 startToStart = ConstraintLayout.LayoutParams.PARENT_ID
                 endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
-                topToBottom = binding.playbackToolbar.id
+                // Extend the artwork color wash behind the toolbar as well as to the bottom
+                // edge, preventing a flat strip above the player backdrop.
+                topToTop = ConstraintLayout.LayoutParams.PARENT_ID
                 bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
             }
         root.addView(surfaceBackdrop, 0, surfaceBackdropParams)
