@@ -86,6 +86,7 @@ class PlaybackPanelFragment :
     @Inject lateinit var imageLoader: ImageLoader
 
     private var artworkAmbientBackdrop: ArtworkAmbientBackdrop? = null
+    private var playerSurfaceBackdrop: ArtworkAmbientBackdrop? = null
     private val coverPagerAdapter = CoverPagerAdapter(this)
     private val playbackModel: PlaybackViewModel by activityViewModels()
     private val detailModel: DetailViewModel by activityViewModels()
@@ -205,7 +206,32 @@ class PlaybackPanelFragment :
      */
     private fun installArtworkAmbientBackdrop(binding: FragmentPlaybackPanelBinding) {
         val pager = binding.playbackPager
-        val backdrop =
+        val root = binding.root
+        val density = resources.displayMetrics.density
+
+        // The expanded player needs its own full-width color source. The cover-specific layer below
+        // remains sized to the pager so its existing edge refraction and backdrop stay unchanged.
+        val surfaceBackdrop =
+            ArtworkAmbientBackdrop(
+                    requireContext(),
+                    imageLoader,
+                    blurRadiusDp = 52f,
+                    opacity = 0.72f,
+                )
+                .apply {
+                    id = View.generateViewId()
+                }
+        val surfaceBackdropParams =
+            ConstraintLayout.LayoutParams(0, 0).apply {
+                startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+                endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+                topToBottom = binding.playbackToolbar.id
+                bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+            }
+        root.addView(surfaceBackdrop, 0, surfaceBackdropParams)
+        playerSurfaceBackdrop = surfaceBackdrop
+
+        val artworkBackdrop =
             ArtworkAmbientBackdrop(
                     requireContext(),
                     imageLoader,
@@ -215,9 +241,8 @@ class PlaybackPanelFragment :
                 .apply {
                     id = View.generateViewId()
                 }
-        val density = resources.displayMetrics.density
         val outset = (22f * density).toInt()
-        val params =
+        val artworkBackdropParams =
             ConstraintLayout.LayoutParams(0, 0).apply {
                 startToStart = pager.id
                 endToEnd = pager.id
@@ -225,10 +250,19 @@ class PlaybackPanelFragment :
                 bottomToBottom = pager.id
                 setMargins(-outset, -outset, -outset, -outset)
             }
-        // The pager's old gray background masks this layer in the cover corners.
+
+        // The pager's old gray background masks the artwork layer in the cover corners.
         pager.background = null
-        binding.root.addView(backdrop, 0, params)
-        artworkAmbientBackdrop = backdrop
+        root.addView(artworkBackdrop, 1, artworkBackdropParams)
+        artworkAmbientBackdrop = artworkBackdrop
+    }
+
+    override fun onDestroyBinding(binding: FragmentPlaybackPanelBinding) {
+        artworkAmbientBackdrop?.clear()
+        artworkAmbientBackdrop = null
+        playerSurfaceBackdrop?.clear()
+        playerSurfaceBackdrop = null
+        super.onDestroyBinding(binding)
     }
 
     /**
@@ -289,7 +323,7 @@ class PlaybackPanelFragment :
             root.findViewById<ViewGroup>(R.id.playback_controls_wrapper)
                 ?: root.findViewById<ViewGroup>(R.id.playback_controls_container)
                 ?: return
-        val glassBackdropSource = artworkAmbientBackdrop ?: binding.playbackPager
+        val glassBackdropSource = playerSurfaceBackdrop ?: binding.playbackPager
         val surfaces: List<ViewGroup> = listOf(binding.playbackInfoContainer, controlsSurface)
         val density = resources.displayMetrics.density
         surfaces.forEach { surface ->
@@ -310,12 +344,12 @@ class PlaybackPanelFragment :
                     enableAdaptiveTint = false
                     material = GlassMaterial.CLEAR
                     cornerRadius = 28f * density
-                    bevelWidth = 22f * density
-                    refractionHeight = 44f * density
-                    refractionFalloff = 1.5f
-                    dispersionStrength = 0.14f
-                    blurAmount = 0.075f
-                    saturation = 140f
+                    bevelWidth = 26f * density
+                    refractionHeight = 50f * density
+                    refractionFalloff = 1.45f
+                    dispersionStrength = 0.16f
+                    blurAmount = 0.09f
+                    saturation = 135f
                     collectFrameStats = false
                 }
             val surfaceId = surface.id
@@ -410,6 +444,7 @@ class PlaybackPanelFragment :
 
     private fun updateSong(song: Song?) {
         artworkAmbientBackdrop?.bind(song)
+        playerSurfaceBackdrop?.bind(song)
         if (song == null) {
             // Nothing to do.
             return
