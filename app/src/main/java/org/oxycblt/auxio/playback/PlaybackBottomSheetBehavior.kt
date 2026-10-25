@@ -79,17 +79,14 @@ class PlaybackBottomSheetBehavior<V : View>(context: Context, attributeSet: Attr
     override fun isHideableWhenDragging() = false
 
     override fun createBackground(context: Context, uiSettings: UISettings) =
-        LayerDrawable(
-            arrayOf(
-                // Keep the backing layer transparent so the glass mini-player can reveal its
-                // artwork backdrop while collapsed. The main shape drawable remains in place
-                // for the expanded player and retains the existing sheet gesture behavior.
-                MaterialShapeDrawable(sheetBackgroundDrawable.shapeAppearanceModel).apply {
-                    fillColor = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
-                },
-                sheetBackgroundDrawable,
-            )
-        )
+        // The sheet's opaque shape drawable sits above the transparent backing layer,
+        // so the previous layered approach still painted a solid surface behind the mini-player.
+        // Keep the rounded shape for clipping/elevation, but make the sheet surface transparent;
+        // the mini-player and expanded player now provide their own visual surfaces.
+        MaterialShapeDrawable(sheetBackgroundDrawable.shapeAppearanceModel).apply {
+            fillColor =
+                android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
+        }
 
     override fun applyWindowInsets(child: View, insets: WindowInsets): WindowInsets {
         super.applyWindowInsets(child, insets)
