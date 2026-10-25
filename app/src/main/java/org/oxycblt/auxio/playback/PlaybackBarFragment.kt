@@ -107,15 +107,22 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
 
     private fun installMiniPlayerGlass(binding: FragmentPlaybackBarBinding) {
         val density = resources.displayMetrics.density
+        val cornerRadius = 28f * density
         val ambient =
             ArtworkAmbientBackdrop(
                     requireContext(),
                     imageLoader,
-                    blurRadiusDp = 24f,
-                    opacity = 0.72f,
+                    blurRadiusDp = 34f,
+                    opacity = 0.88f,
                 )
                 .apply {
                     id = View.generateViewId()
+                    background =
+                        android.graphics.drawable.GradientDrawable().apply {
+                            shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+                            cornerRadius = cornerRadius
+                        }
+                    clipToOutline = true
                 }
         val ambientParams =
             ConstraintLayout.LayoutParams(0, 0).apply {
@@ -123,8 +130,6 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
                 endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
                 topToTop = ConstraintLayout.LayoutParams.PARENT_ID
                 bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
-                val outset = (8f * density).toInt()
-                setMargins(-outset, -outset, -outset, -outset)
             }
         binding.root.addView(ambient, 0, ambientParams)
         artworkAmbientBackdrop = ambient
@@ -146,12 +151,12 @@ class PlaybackBarFragment : ViewBindingFragment<FragmentPlaybackBarBinding>() {
                 enableAdaptiveTint = false
                 material = GlassMaterial.CLEAR
                 cornerRadius = 28f * density
-                bevelWidth = 20f * density
-                refractionHeight = 40f * density
+                bevelWidth = 16f * density
+                refractionHeight = 34f * density
                 refractionFalloff = 1.5f
                 dispersionStrength = 0.14f
-                blurAmount = 0.075f
-                saturation = 140f
+                blurAmount = 0.11f
+                saturation = 125f
                 collectFrameStats = false
             }
         val params =
