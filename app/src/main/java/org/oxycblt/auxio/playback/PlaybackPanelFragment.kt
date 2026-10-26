@@ -42,7 +42,6 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import coil3.ImageLoader
 import com.example.liquidglass.GlassMaterial
-import com.google.android.material.color.MaterialColors
 import com.example.liquidglass.LiquidGlassView
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -428,8 +427,8 @@ class PlaybackPanelFragment :
 
         listOf(binding.playbackSkipPrev, binding.playbackSkipNext).forEach { button ->
             button.backgroundTintList = unselectedFill
-            button.strokeColor = glassStroke
-            button.strokeWidth = strokeWidth
+            button.setStrokeColor(glassStroke)
+            button.setStrokeWidth(strokeWidth)
             button.iconTint = iconTint
         }
         listOf(binding.playbackRepeat, binding.playbackShuffle).forEach { button ->
@@ -440,8 +439,8 @@ class PlaybackPanelFragment :
         }
         binding.playbackPlayPause.apply {
             backgroundTintList = playPauseFill
-            strokeColor = glassStroke
-            strokeWidth = strokeWidth
+            setStrokeColor(glassStroke)
+            setStrokeWidth(strokeWidth)
             iconTint = iconTint
         }
     }
