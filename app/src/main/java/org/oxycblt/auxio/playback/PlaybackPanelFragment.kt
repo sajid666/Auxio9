@@ -27,13 +27,11 @@ import android.graphics.Color
 import android.media.audiofx.AudioEffect
 import android.os.Build
 import android.os.Bundle
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.Toolbar
@@ -367,8 +365,9 @@ class PlaybackPanelFragment :
     }
 
     /**
-     * Give each portrait playback button a brighter, layered glass finish without changing its
-     * checked state or the playback actions it triggers.
+     * Put real LiquidGlassView lenses behind the playback buttons. The button widgets themselves
+     * remain in the existing MaterialButtonGroup, so their actions, state, sizing and spring shape
+     * behavior stay intact. Their fills are translucent so the refraction underneath can be seen.
      */
     /**
      * Put real LiquidGlassView lenses behind the playback buttons. The button widgets themselves
@@ -376,10 +375,10 @@ class PlaybackPanelFragment :
      * behavior stay intact. Their fills are translucent so the refraction underneath can be seen.
      */
     private fun installPlaybackControlGlass(binding: FragmentPlaybackPanelBinding) {
+        val root = binding.root
         val controlsSurface =
-            (binding.root.findViewById<ViewGroup>(R.id.playback_controls_wrapper)
-                ?: binding.root.findViewById<ViewGroup>(R.id.playback_controls_container))
-                as? FrameLayout
+            root.findViewById<ViewGroup>(R.id.playback_controls_wrapper)
+                ?: root.findViewById<ViewGroup>(R.id.playback_controls_container)
                 ?: return
         val backdrop = playerSurfaceBackdrop ?: binding.playbackPager
         val primary = Color.rgb(35, 115, 190)
@@ -453,21 +452,23 @@ class PlaybackPanelFragment :
                 }
             }
 
-        // Insert lenses behind the existing button group. The group and buttons are drawn later,
-        // so the glass refracts the artwork while the real MaterialButton icons remain on top.
+        // Add each lens as a root sibling immediately before the controls container. This avoids
+        // violating ForcedLTRFrameLayout's one-child contract while keeping the real buttons above
+        // the lens in the draw order.
         glassByButton.values.forEach { glass ->
-            controlsSurface.addView(
+            root.addView(
                 glass,
-                0,
-                FrameLayout.LayoutParams(1, 1).apply {
-                    gravity = Gravity.TOP or Gravity.START
+                root.indexOfChild(controlsSurface),
+                ConstraintLayout.LayoutParams(1, 1).apply {
+                    leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID
+                    topToTop = ConstraintLayout.LayoutParams.PARENT_ID
                 },
             )
         }
 
         fun updateGlassBounds() {
-            val surfaceLocation = IntArray(2)
-            controlsSurface.getLocationOnScreen(surfaceLocation)
+            val rootLocation = IntArray(2)
+            root.getLocationOnScreen(rootLocation)
             glassByButton.forEach { (button, glass) ->
                 if (button.width <= 0 || button.height <= 0) {
                     return@forEach
@@ -475,9 +476,9 @@ class PlaybackPanelFragment :
 
                 val buttonLocation = IntArray(2)
                 button.getLocationOnScreen(buttonLocation)
-                val left = buttonLocation[0] - surfaceLocation[0]
-                val top = buttonLocation[1] - surfaceLocation[1]
-                val params = glass.layoutParams as FrameLayout.LayoutParams
+                val left = buttonLocation[0] - rootLocation[0]
+                val top = buttonLocation[1] - rootLocation[1]
+                val params = glass.layoutParams as ConstraintLayout.LayoutParams
                 if (
                     params.width != button.width ||
                         params.height != button.height ||
@@ -488,7 +489,7 @@ class PlaybackPanelFragment :
                     params.height = button.height
                     params.leftMargin = left
                     params.topMargin = top
-                    controlsSurface.updateViewLayout(glass, params)
+                    root.updateViewLayout(glass, params)
                 }
 
                 val side = minOf(button.width, button.height).toFloat()
@@ -508,10 +509,10 @@ class PlaybackPanelFragment :
         controlsSurface.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updateGlassBounds()
         }
-        binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+        root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updateGlassBounds()
         }
-        controlsSurface.post { updateGlassBounds() }
+        root.post { updateGlassBounds() }
     }
 
     // FIXME: Old code!! Maybe not necessary anymore?
