@@ -320,9 +320,9 @@ class PlaybackPanelFragment :
     }
 
     /**
-     * Extend the liquid material to the song metadata and controls. In the stacked portrait
-     * layout, use one shared lens across metadata, seek bar, and controls so their glass edges
-     * do not appear as separate cards. Keep separate lenses in the side-by-side layout.
+     * Extend the liquid material to the song metadata and controls. In the stacked portrait layout,
+     * use one shared lens across metadata, seek bar, and controls so their glass edges do not
+     * appear as separate cards. Keep separate lenses in the side-by-side layout.
      */
     private fun installPlayerSurfaceGlass(binding: FragmentPlaybackPanelBinding) {
         val root = binding.root
@@ -335,8 +335,7 @@ class PlaybackPanelFragment :
         val pagerParams =
             root.findViewById<View>(R.id.playback_pager)?.layoutParams
                 as? ConstraintLayout.LayoutParams
-        val isStackedPortraitLayout =
-            pagerParams?.bottomToTop == binding.playbackInfoContainer.id
+        val isStackedPortraitLayout = pagerParams?.bottomToTop == binding.playbackInfoContainer.id
 
         fun createGlass(): PlaybackLiquidGlassOverlay =
             PlaybackLiquidGlassOverlay(requireContext()).apply {
