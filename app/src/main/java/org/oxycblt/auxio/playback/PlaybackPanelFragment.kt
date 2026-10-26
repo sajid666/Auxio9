@@ -370,9 +370,30 @@ class PlaybackPanelFragment :
         controlsSurface.setBackgroundColor(android.graphics.Color.TRANSPARENT)
 
         if (isStackedPortraitLayout) {
-            // The full-screen artwork backdrop is already the shared surface in portrait. Adding
-            // another rounded lens here creates a separate card and leaves the gap under the cover
-            // outside the material, so keep the content transparent and glass-style the controls.
+            // One continuous lens starts directly beneath the cover and extends through metadata,
+            // the seek bar, and controls. This removes the unglazed strip between artwork and info
+            // and avoids the stacked-card look from separate surfaces.
+            val glass = createGlass().apply {
+                cornerRadius = 34f * density
+                bevelWidth = 34f * density
+                refractionHeight = 66f * density
+                refractionFalloff = 1.3f
+                dispersionStrength = 0.2f
+                blurAmount = 0.06f
+                saturation = 145f
+            }
+            val pager = binding.playbackPager
+            val params =
+                ConstraintLayout.LayoutParams(0, 0).apply {
+                    startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+                    endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
+                    topToBottom = pager.id
+                    bottomToBottom = controlsSurface.id
+                    val sideInset = (12f * density).toInt()
+                    setMargins(sideInset, (-8f * density).toInt(), sideInset, 0)
+                }
+            // Keep the lens behind text and controls, but above the artwork-derived backdrop.
+            root.addView(glass, root.indexOfChild(binding.playbackInfoContainer), params)
             installPlaybackControlGlass(binding)
             return
         }
