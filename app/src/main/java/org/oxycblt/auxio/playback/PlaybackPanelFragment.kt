@@ -378,21 +378,21 @@ class PlaybackPanelFragment :
                 Color.blue(color),
             )
 
-        val unselectedFill = ColorStateList.valueOf(tint(Color.WHITE, 34))
-        val selectedFill = tint(primary, 110)
+        val unselectedFill = ColorStateList.valueOf(tint(Color.WHITE, 62))
+        val selectedFill = tint(primary, 156)
         val checkedFill =
             ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(selectedFill, tint(Color.WHITE, 34)),
+                intArrayOf(selectedFill, tint(Color.WHITE, 62)),
             )
         val playPauseFill =
             ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(tint(primary, 132), tint(Color.WHITE, 56)),
+                intArrayOf(tint(primary, 190), tint(Color.WHITE, 82)),
             )
-        val glassStroke = ColorStateList.valueOf(tint(Color.WHITE, 128))
+        val glassStroke = ColorStateList.valueOf(tint(Color.WHITE, 220))
         val iconTint = ColorStateList.valueOf(Color.WHITE)
-        val strokeWidth = (resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        val strokeWidth = (2f * resources.displayMetrics.density).toInt().coerceAtLeast(2)
 
         listOf(binding.playbackSkipPrev, binding.playbackSkipNext).forEach { button ->
             button.backgroundTintList = unselectedFill
