@@ -419,38 +419,37 @@ class PlaybackPanelFragment :
                 binding.playbackSkipNext,
                 binding.playbackShuffle,
             )
-        val glassByButton =
-            buttons.associateWith { _ ->
-                PlaybackLiquidGlassOverlay(requireContext()).apply {
-                    id = View.generateViewId()
-                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                    isClickable = false
-                    isFocusable = false
-                    enablePressEffect = false
-                    backdropSource = backdrop
-                    enableDynamicBackground = true
-                    enableBackdropBlur = true
-                    enableChromaticAberration = false
-                    enableChromaticDispersion = true
-                    enableEdgeHighlight = true
-                    enableSensorHighlight = true
-                    enableAdaptiveTint = false
-                    material = GlassMaterial.CLEAR
-                    // Bounds are set to the live button size below; these initial values keep
-                    // the glass geometry valid before the first layout pass.
-                    cornerRadius = 24f
-                    bevelWidth = 16f
-                    refractionHeight = 18f
-                    refractionFalloff = 1.15f
-                    dispersionStrength = 0.20f
-                    blurAmount = 0.045f
-                    saturation = 140f
-                    edgeHighlightBorderWidth = 2f
-                    edgeHighlightOpacity = 100f
-                    collectFrameStats = false
-                    visibility = View.INVISIBLE
-                }
+        val glassByButton = buttons.associateWith { _ ->
+            PlaybackLiquidGlassOverlay(requireContext()).apply {
+                id = View.generateViewId()
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                isClickable = false
+                isFocusable = false
+                enablePressEffect = false
+                backdropSource = backdrop
+                enableDynamicBackground = true
+                enableBackdropBlur = true
+                enableChromaticAberration = false
+                enableChromaticDispersion = true
+                enableEdgeHighlight = true
+                enableSensorHighlight = true
+                enableAdaptiveTint = false
+                material = GlassMaterial.CLEAR
+                // Bounds are set to the live button size below; these initial values keep
+                // the glass geometry valid before the first layout pass.
+                cornerRadius = 24f
+                bevelWidth = 16f
+                refractionHeight = 18f
+                refractionFalloff = 1.15f
+                dispersionStrength = 0.20f
+                blurAmount = 0.045f
+                saturation = 140f
+                edgeHighlightBorderWidth = 2f
+                edgeHighlightOpacity = 100f
+                collectFrameStats = false
+                visibility = View.INVISIBLE
             }
+        }
 
         // Add each lens as a root sibling immediately before the controls container. This avoids
         // violating ForcedLTRFrameLayout's one-child contract while keeping the real buttons above
