@@ -27,11 +27,13 @@ import android.graphics.Color
 import android.media.audiofx.AudioEffect
 import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.Toolbar
@@ -368,8 +370,20 @@ class PlaybackPanelFragment :
      * Give each portrait playback button a brighter, layered glass finish without changing its
      * checked state or the playback actions it triggers.
      */
+    /**
+     * Put real LiquidGlassView lenses behind the playback buttons. The button widgets themselves
+     * remain in the existing MaterialButtonGroup, so their actions, state, sizing and spring shape
+     * behavior stay intact. Their fills are translucent so the refraction underneath can be seen.
+     */
     private fun installPlaybackControlGlass(binding: FragmentPlaybackPanelBinding) {
+        val controlsSurface =
+            (binding.root.findViewById<ViewGroup>(R.id.playback_controls_wrapper)
+                ?: binding.root.findViewById<ViewGroup>(R.id.playback_controls_container))
+                as? FrameLayout
+                ?: return
+        val backdrop = playerSurfaceBackdrop ?: binding.playbackPager
         val primary = Color.rgb(35, 115, 190)
+
         fun tint(color: Int, alpha: Int) =
             Color.argb(
                 alpha,
@@ -378,40 +392,126 @@ class PlaybackPanelFragment :
                 Color.blue(color),
             )
 
-        val unselectedFill = ColorStateList.valueOf(tint(Color.WHITE, 62))
-        val selectedFill = tint(primary, 156)
-        val checkedFill =
+        val neutralFill = ColorStateList.valueOf(tint(Color.WHITE, 26))
+        val toggleFill =
             ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(selectedFill, tint(Color.WHITE, 62)),
+                intArrayOf(tint(primary, 72), tint(Color.WHITE, 26)),
             )
         val playPauseFill =
             ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(tint(primary, 190), tint(Color.WHITE, 82)),
+                intArrayOf(tint(primary, 100), tint(Color.WHITE, 40)),
             )
-        val glassStroke = ColorStateList.valueOf(tint(Color.WHITE, 220))
-        val iconTint = ColorStateList.valueOf(Color.WHITE)
-        val strokeWidth = (2f * resources.displayMetrics.density).toInt().coerceAtLeast(2)
 
-        listOf(binding.playbackSkipPrev, binding.playbackSkipNext).forEach { button ->
-            button.backgroundTintList = unselectedFill
-            button.setStrokeColor(glassStroke)
-            button.setStrokeWidth(strokeWidth)
-            button.iconTint = iconTint
+        listOf(binding.playbackSkipPrev, binding.playbackSkipNext).forEach {
+            it.backgroundTintList = neutralFill
         }
-        listOf(binding.playbackRepeat, binding.playbackShuffle).forEach { button ->
-            button.backgroundTintList = checkedFill
-            button.setStrokeColor(glassStroke)
-            button.setStrokeWidth(strokeWidth)
-            button.iconTint = iconTint
+        listOf(binding.playbackRepeat, binding.playbackShuffle).forEach {
+            it.backgroundTintList = toggleFill
         }
-        binding.playbackPlayPause.apply {
-            backgroundTintList = playPauseFill
-            setStrokeColor(glassStroke)
-            setStrokeWidth(strokeWidth)
-            setIconTint(iconTint)
+        binding.playbackPlayPause.backgroundTintList = playPauseFill
+
+        val buttons =
+            listOf(
+                binding.playbackRepeat,
+                binding.playbackSkipPrev,
+                binding.playbackPlayPause,
+                binding.playbackSkipNext,
+                binding.playbackShuffle,
+            )
+        val glassByButton =
+            buttons.associateWith { _ ->
+                PlaybackLiquidGlassOverlay(requireContext()).apply {
+                    id = View.generateViewId()
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                    isClickable = false
+                    isFocusable = false
+                    enablePressEffect = false
+                    backdropSource = backdrop
+                    enableDynamicBackground = true
+                    enableBackdropBlur = true
+                    enableChromaticAberration = false
+                    enableChromaticDispersion = true
+                    enableEdgeHighlight = true
+                    enableSensorHighlight = true
+                    enableAdaptiveTint = false
+                    material = GlassMaterial.CLEAR
+                    // Bounds are set to the live button size below; these initial values keep
+                    // the glass geometry valid before the first layout pass.
+                    cornerRadius = 24f
+                    bevelWidth = 16f
+                    refractionHeight = 18f
+                    refractionFalloff = 1.15f
+                    dispersionStrength = 0.20f
+                    blurAmount = 0.045f
+                    saturation = 140f
+                    edgeHighlightBorderWidth = 2f
+                    edgeHighlightOpacity = 100f
+                    collectFrameStats = false
+                    visibility = View.INVISIBLE
+                }
+            }
+
+        // Insert lenses behind the existing button group. The group and buttons are drawn later,
+        // so the glass refracts the artwork while the real MaterialButton icons remain on top.
+        glassByButton.values.forEach { glass ->
+            controlsSurface.addView(
+                glass,
+                0,
+                FrameLayout.LayoutParams(1, 1).apply {
+                    gravity = Gravity.TOP or Gravity.START
+                },
+            )
         }
+
+        fun updateGlassBounds() {
+            val surfaceLocation = IntArray(2)
+            controlsSurface.getLocationOnScreen(surfaceLocation)
+            glassByButton.forEach { (button, glass) ->
+                if (button.width <= 0 || button.height <= 0) {
+                    return@forEach
+                }
+
+                val buttonLocation = IntArray(2)
+                button.getLocationOnScreen(buttonLocation)
+                val left = buttonLocation[0] - surfaceLocation[0]
+                val top = buttonLocation[1] - surfaceLocation[1]
+                val params = glass.layoutParams as FrameLayout.LayoutParams
+                if (
+                    params.width != button.width ||
+                        params.height != button.height ||
+                        params.leftMargin != left ||
+                        params.topMargin != top
+                ) {
+                    params.width = button.width
+                    params.height = button.height
+                    params.leftMargin = left
+                    params.topMargin = top
+                    controlsSurface.updateViewLayout(glass, params)
+                }
+
+                val side = minOf(button.width, button.height).toFloat()
+                glass.cornerRadius = side / 2f
+                glass.bevelWidth = side * 0.34f
+                glass.refractionHeight = side * 0.32f
+                glass.visibility = View.VISIBLE
+                glass.invalidate()
+            }
+        }
+
+        buttons.forEach { button ->
+            button.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                updateGlassBounds()
+            }
+        }
+        controlsSurface.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            updateGlassBounds()
+        }
+        binding.root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            updateGlassBounds()
+        }
+        controlsSurface.post { updateGlassBounds() }
     }
 
     // FIXME: Old code!! Maybe not necessary anymore?
