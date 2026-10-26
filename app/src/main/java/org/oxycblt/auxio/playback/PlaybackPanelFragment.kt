@@ -438,7 +438,7 @@ class PlaybackPanelFragment :
             backgroundTintList = playPauseFill
             setStrokeColor(glassStroke)
             setStrokeWidth(strokeWidth)
-            iconTint = iconTint
+            setIconTint(iconTint)
         }
     }
 
