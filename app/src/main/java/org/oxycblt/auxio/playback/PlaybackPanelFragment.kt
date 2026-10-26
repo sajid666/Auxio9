@@ -365,10 +365,11 @@ class PlaybackPanelFragment :
     }
 
     /**
-     * Give the portrait playback controls a light, outlined glass treatment without changing their
-     * checkable state or the playback actions they trigger.
+     * Give each portrait playback button a brighter, layered glass finish without changing its
+     * checked state or the playback actions it triggers.
      */
     private fun installPlaybackControlGlass(binding: FragmentPlaybackPanelBinding) {
+        val density = resources.displayMetrics.density
         val primary = Color.rgb(35, 115, 190)
         fun tint(color: Int, alpha: Int) =
             Color.argb(
@@ -378,40 +379,49 @@ class PlaybackPanelFragment :
                 Color.blue(color),
             )
 
-        val unselectedFill = ColorStateList.valueOf(tint(Color.WHITE, 28))
-        val selectedFill = tint(primary, 96)
-        val checkedFill =
-            ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(selectedFill, tint(Color.WHITE, 28)),
-            )
-        val playPauseFill =
-            ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(tint(primary, 116), tint(Color.WHITE, 48)),
-            )
-        val glassStroke = ColorStateList.valueOf(tint(Color.WHITE, 112))
-        val iconTint = ColorStateList.valueOf(Color.WHITE)
-        val strokeWidth = (resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        fun glassFill(top: Int, bottom: Int): android.graphics.drawable.GradientDrawable =
+            android.graphics.drawable.GradientDrawable(
+                    android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM,
+                    intArrayOf(top, bottom),
+                )
+                .apply {
+                    shape = android.graphics.drawable.GradientDrawable.OVAL
+                    setStroke((1.15f * density).toInt().coerceAtLeast(1), tint(Color.WHITE, 172))
+                }
 
-        listOf(binding.playbackSkipPrev, binding.playbackSkipNext).forEach { button ->
-            button.backgroundTintList = unselectedFill
-            button.setStrokeColor(glassStroke)
-            button.setStrokeWidth(strokeWidth)
-            button.iconTint = iconTint
+        fun applyGlass(button: ScaledPlaybackButton, checkedTop: Int? = null) {
+            val normal =
+                glassFill(
+                    tint(Color.WHITE, 86),
+                    tint(Color.WHITE, 22),
+                )
+            val checked =
+                glassFill(
+                    checkedTop ?: tint(primary, 132),
+                    if (checkedTop != null) tint(primary, 74) else tint(Color.WHITE, 40),
+                )
+            val states =
+                android.graphics.drawable.StateListDrawable().apply {
+                    addState(
+                        intArrayOf(android.R.attr.state_checked),
+                        checked,
+                    )
+                    addState(intArrayOf(), normal)
+                }
+            button.background = states
+            button.backgroundTintList = null
+            button.setStrokeColor(ColorStateList.valueOf(tint(Color.WHITE, 0)))
+            button.setStrokeWidth(0)
+            button.iconTint = ColorStateList.valueOf(Color.WHITE)
+            button.elevation = 5f * density
+            button.stateListAnimator = null
         }
-        listOf(binding.playbackRepeat, binding.playbackShuffle).forEach { button ->
-            button.backgroundTintList = checkedFill
-            button.setStrokeColor(glassStroke)
-            button.setStrokeWidth(strokeWidth)
-            button.iconTint = iconTint
-        }
-        binding.playbackPlayPause.apply {
-            backgroundTintList = playPauseFill
-            setStrokeColor(glassStroke)
-            setStrokeWidth(strokeWidth)
-            setIconTint(iconTint)
-        }
+
+        applyGlass(binding.playbackRepeat, tint(primary, 158))
+        applyGlass(binding.playbackShuffle, tint(primary, 158))
+        applyGlass(binding.playbackSkipPrev)
+        applyGlass(binding.playbackSkipNext)
+        applyGlass(binding.playbackPlayPause, tint(primary, 205))
     }
 
     // FIXME: Old code!! Maybe not necessary anymore?
