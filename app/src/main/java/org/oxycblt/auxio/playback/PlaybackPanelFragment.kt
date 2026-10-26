@@ -397,11 +397,7 @@ class PlaybackPanelFragment :
      * checkable state or the playback actions they trigger.
      */
     private fun installPlaybackControlGlass(binding: FragmentPlaybackPanelBinding) {
-        val primary = MaterialColors.getColor(
-            binding.root,
-            com.google.android.material.R.attr.colorPrimary,
-            Color.WHITE,
-        )
+        val primary = Color.rgb(35, 115, 190)
         fun tint(color: Int, alpha: Int) = Color.argb(
             alpha,
             Color.red(color),
@@ -433,8 +429,8 @@ class PlaybackPanelFragment :
         }
         listOf(binding.playbackRepeat, binding.playbackShuffle).forEach { button ->
             button.backgroundTintList = checkedFill
-            button.strokeColor = glassStroke
-            button.strokeWidth = strokeWidth
+            button.setStrokeColor(glassStroke)
+            button.setStrokeWidth(strokeWidth)
             button.iconTint = iconTint
         }
         binding.playbackPlayPause.apply {
