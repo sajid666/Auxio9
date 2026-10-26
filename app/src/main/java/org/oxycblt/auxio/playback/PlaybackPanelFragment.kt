@@ -22,6 +22,8 @@ import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.media.audiofx.AudioEffect
 import android.os.Build
 import android.os.Bundle
@@ -40,6 +42,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import coil3.ImageLoader
 import com.example.liquidglass.GlassMaterial
+import com.google.android.material.color.MaterialColors
 import com.example.liquidglass.LiquidGlassView
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -368,34 +371,78 @@ class PlaybackPanelFragment :
         controlsSurface.setBackgroundColor(android.graphics.Color.TRANSPARENT)
 
         if (isStackedPortraitLayout) {
-            // The seek bar is between these anchors and remains drawn above the shared lens.
+            // The full-screen artwork backdrop is already the shared surface in portrait. Adding
+            // another rounded lens here creates a separate card and leaves the gap under the cover
+            // outside the material, so keep the content transparent and glass-style the controls.
+            installPlaybackControlGlass(binding)
+            return
+        }
+
+        // Preserve the established side-by-side layout: separate lenses avoid overlapping artwork.
+        listOf(binding.playbackInfoContainer, controlsSurface).forEach { surface ->
             val glass = createGlass()
+            val surfaceId = surface.id
             val params =
                 ConstraintLayout.LayoutParams(0, 0).apply {
-                    startToStart = ConstraintLayout.LayoutParams.PARENT_ID
-                    endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
-                    topToTop = binding.playbackInfoContainer.id
-                    bottomToBottom = controlsSurface.id
-                    val sideInset = resources.getDimensionPixelSize(R.dimen.spacing_medium)
-                    marginStart = sideInset
-                    marginEnd = sideInset
+                    startToStart = surfaceId
+                    endToEnd = surfaceId
+                    topToTop = surfaceId
+                    bottomToBottom = surfaceId
                 }
-            root.addView(glass, root.indexOfChild(binding.playbackInfoContainer), params)
-        } else {
-            // Preserve the established side-by-side layout: a single tall lens there would overlap
-            // the artwork pager.
-            listOf(binding.playbackInfoContainer, controlsSurface).forEach { surface ->
-                val glass = createGlass()
-                val surfaceId = surface.id
-                val params =
-                    ConstraintLayout.LayoutParams(0, 0).apply {
-                        startToStart = surfaceId
-                        endToEnd = surfaceId
-                        topToTop = surfaceId
-                        bottomToBottom = surfaceId
-                    }
-                root.addView(glass, root.indexOfChild(surface), params)
-            }
+            root.addView(glass, root.indexOfChild(surface), params)
+        }
+    }
+
+    /**
+     * Give the portrait playback controls a light, outlined glass treatment without changing their
+     * checkable state or the playback actions they trigger.
+     */
+    private fun installPlaybackControlGlass(binding: FragmentPlaybackPanelBinding) {
+        val primary = MaterialColors.getColor(
+            binding.root,
+            com.google.android.material.R.attr.colorPrimary,
+            Color.WHITE,
+        )
+        fun tint(color: Int, alpha: Int) = Color.argb(
+            alpha,
+            Color.red(color),
+            Color.green(color),
+            Color.blue(color),
+        )
+
+        val unselectedFill = ColorStateList.valueOf(tint(Color.WHITE, 28))
+        val selectedFill = tint(primary, 96)
+        val checkedFill =
+            ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(selectedFill, tint(Color.WHITE, 28)),
+            )
+        val playPauseFill =
+            ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(tint(primary, 116), tint(Color.WHITE, 48)),
+            )
+        val glassStroke = ColorStateList.valueOf(tint(Color.WHITE, 112))
+        val iconTint = ColorStateList.valueOf(Color.WHITE)
+        val strokeWidth = (resources.displayMetrics.density).toInt().coerceAtLeast(1)
+
+        listOf(binding.playbackSkipPrev, binding.playbackSkipNext).forEach { button ->
+            button.backgroundTintList = unselectedFill
+            button.strokeColor = glassStroke
+            button.strokeWidth = strokeWidth
+            button.iconTint = iconTint
+        }
+        listOf(binding.playbackRepeat, binding.playbackShuffle).forEach { button ->
+            button.backgroundTintList = checkedFill
+            button.strokeColor = glassStroke
+            button.strokeWidth = strokeWidth
+            button.iconTint = iconTint
+        }
+        binding.playbackPlayPause.apply {
+            backgroundTintList = playPauseFill
+            strokeColor = glassStroke
+            strokeWidth = strokeWidth
+            iconTint = iconTint
         }
     }
 
