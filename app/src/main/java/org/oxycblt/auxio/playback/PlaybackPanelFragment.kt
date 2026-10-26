@@ -87,7 +87,6 @@ class PlaybackPanelFragment :
     StepperOverlay.Listener {
     @Inject lateinit var imageLoader: ImageLoader
 
-    private var artworkAmbientBackdrop: ArtworkAmbientBackdrop? = null
     private var playerSurfaceBackdrop: ArtworkAmbientBackdrop? = null
     private val coverPagerAdapter = CoverPagerAdapter(this)
     private val playbackModel: PlaybackViewModel by activityViewModels()
@@ -209,25 +208,22 @@ class PlaybackPanelFragment :
     }
 
     /**
-     * Place a blurred copy of the active artwork behind the pager. Transparent image corners reveal
-     * this layer, while the expanded bounds provide a soft color halo around the cover.
+     * Keep one blurred copy of the active artwork behind the entire player. Using one continuous
+     * source avoids a visible seam where a separately cropped cover halo would end.
      */
     private fun installArtworkAmbientBackdrop(binding: FragmentPlaybackPanelBinding) {
         val pager = binding.playbackPager
         val root = binding.root
         // The backdrop must be able to draw into the bottom system-bar padding.
         root.clipToPadding = false
-        val density = resources.displayMetrics.density
 
-        // The expanded player needs its own full-width color source. The cover-specific layer below
-        // remains sized to the pager so its existing edge refraction and backdrop stay unchanged.
         val surfaceBackdrop =
             ArtworkAmbientBackdrop(
                     requireContext(),
                     imageLoader,
-                    // With RenderEffect available, keep the artwork opaque so the transparent
-                    // sheet cannot blend the underlying library into a gray filter. Older Android
-                    // versions retain lower opacity because this backdrop cannot be blurred there.
+                    // With RenderEffect available, keep the artwork opaque so transparent cover
+                    // corners and the lower player reveal the same continuous color field. Older
+                    // Android versions retain lower opacity because the backdrop cannot be blurred.
                     blurRadiusDp = 68f,
                     opacity = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 1f else 0.52f,
                 )
@@ -238,8 +234,6 @@ class PlaybackPanelFragment :
             ConstraintLayout.LayoutParams(0, 0).apply {
                 startToStart = ConstraintLayout.LayoutParams.PARENT_ID
                 endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
-                // Extend the artwork color wash behind the toolbar as well as to the bottom
-                // edge, preventing a flat strip above the player backdrop.
                 topToTop = ConstraintLayout.LayoutParams.PARENT_ID
                 bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
                 bottomMargin = -root.paddingBottom
@@ -247,30 +241,8 @@ class PlaybackPanelFragment :
         root.addView(surfaceBackdrop, 0, surfaceBackdropParams)
         playerSurfaceBackdrop = surfaceBackdrop
 
-        val artworkBackdrop =
-            ArtworkAmbientBackdrop(
-                    requireContext(),
-                    imageLoader,
-                    blurRadiusDp = 34f,
-                    opacity = 0.82f,
-                )
-                .apply {
-                    id = View.generateViewId()
-                }
-        val outset = (22f * density).toInt()
-        val artworkBackdropParams =
-            ConstraintLayout.LayoutParams(0, 0).apply {
-                startToStart = pager.id
-                endToEnd = pager.id
-                topToTop = pager.id
-                bottomToBottom = pager.id
-                setMargins(-outset, -outset, -outset, -outset)
-            }
-
-        // The pager's old gray background masks the artwork layer in the cover corners.
+        // Remove the pager's gray fill so the continuous artwork backdrop remains visible.
         pager.background = null
-        root.addView(artworkBackdrop, 1, artworkBackdropParams)
-        artworkAmbientBackdrop = artworkBackdrop
     }
 
     /**
@@ -478,8 +450,6 @@ class PlaybackPanelFragment :
     //    }
 
     override fun onDestroyBinding(binding: FragmentPlaybackPanelBinding) {
-        artworkAmbientBackdrop?.clear()
-        artworkAmbientBackdrop = null
         playerSurfaceBackdrop?.clear()
         playerSurfaceBackdrop = null
         equalizerLauncher = null
@@ -521,7 +491,6 @@ class PlaybackPanelFragment :
     }
 
     private fun updateSong(song: Song?) {
-        artworkAmbientBackdrop?.bind(song)
         playerSurfaceBackdrop?.bind(song)
         if (song == null) {
             // Nothing to do.
