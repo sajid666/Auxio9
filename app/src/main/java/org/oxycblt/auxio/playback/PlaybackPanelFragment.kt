@@ -380,7 +380,6 @@ class PlaybackPanelFragment :
             root.findViewById<ViewGroup>(R.id.playback_controls_wrapper)
                 ?: root.findViewById<ViewGroup>(R.id.playback_controls_container)
                 ?: return
-        val backdrop = playerSurfaceBackdrop ?: binding.playbackPager
         val primary = Color.rgb(35, 115, 190)
 
         fun tint(color: Int, alpha: Int) =
@@ -426,7 +425,8 @@ class PlaybackPanelFragment :
                 isClickable = false
                 isFocusable = false
                 enablePressEffect = false
-                backdropSource = backdrop
+                // Leave backdropSource unset: LiquidGlassView then samples the direct parent,
+                // including the real artwork/background behind these root-level lenses.
                 enableDynamicBackground = true
                 enableBackdropBlur = true
                 enableChromaticAberration = false
