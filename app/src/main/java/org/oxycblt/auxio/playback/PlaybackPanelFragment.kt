@@ -381,7 +381,8 @@ class PlaybackPanelFragment :
             )
 
         fun glassFill(top: Int, bottom: Int): android.graphics.drawable.GradientDrawable =
-            android.graphics.drawable.GradientDrawable(
+            android.graphics.drawable
+                .GradientDrawable(
                     android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM,
                     intArrayOf(top, bottom),
                 )
