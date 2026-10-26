@@ -398,12 +398,13 @@ class PlaybackPanelFragment :
      */
     private fun installPlaybackControlGlass(binding: FragmentPlaybackPanelBinding) {
         val primary = Color.rgb(35, 115, 190)
-        fun tint(color: Int, alpha: Int) = Color.argb(
-            alpha,
-            Color.red(color),
-            Color.green(color),
-            Color.blue(color),
-        )
+        fun tint(color: Int, alpha: Int) =
+            Color.argb(
+                alpha,
+                Color.red(color),
+                Color.green(color),
+                Color.blue(color),
+            )
 
         val unselectedFill = ColorStateList.valueOf(tint(Color.WHITE, 28))
         val selectedFill = tint(primary, 96)
