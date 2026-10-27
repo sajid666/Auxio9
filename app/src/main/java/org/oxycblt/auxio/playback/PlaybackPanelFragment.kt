@@ -224,7 +224,7 @@ class PlaybackPanelFragment :
                     // With RenderEffect available, keep the artwork opaque so transparent cover
                     // corners and the lower player reveal the same continuous color field. Older
                     // Android versions retain lower opacity because the backdrop cannot be blurred.
-                    blurRadiusDp = 68f,
+                    blurRadiusDp = 36f,
                     opacity = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 1f else 0.52f,
                 )
                 .apply {
