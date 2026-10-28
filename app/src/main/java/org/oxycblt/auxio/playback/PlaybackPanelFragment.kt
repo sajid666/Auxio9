@@ -492,6 +492,19 @@ class PlaybackPanelFragment :
 
                 val side = minOf(button.width, button.height).toFloat()
                 glass.cornerRadius = side / 2f
+                glass.outlineProvider =
+                    object : ViewOutlineProvider() {
+                        override fun getOutline(view: View, outline: android.graphics.Outline) {
+                            outline.setRoundRect(
+                                0,
+                                0,
+                                view.width,
+                                view.height,
+                                minOf(view.width, view.height) / 2f,
+                            )
+                        }
+                    }
+                glass.clipToOutline = true
                 glass.bevelWidth = side * 0.34f
                 glass.refractionHeight = side * 0.32f
                 glass.visibility = View.VISIBLE
