@@ -462,7 +462,8 @@ class PlaybackPanelFragment :
             // corner sizes inside its background drawable, while shapeAppearanceModel exposes
             // only the default shape; using the latter misses the actual spring transition.
             val buttonOutline = Outline()
-            button.getOutline(buttonOutline)
+            (button.outlineProvider ?: ViewOutlineProvider.BACKGROUND)
+                .getOutline(button, buttonOutline)
             val liveRadius = buttonOutline.radius
             if (liveRadius < 0f) {
                 // The liquid-glass renderer models rounded rectangles, so retain the last
@@ -485,7 +486,8 @@ class PlaybackPanelFragment :
             glass.outlineProvider =
                 object : ViewOutlineProvider() {
                     override fun getOutline(view: View, outline: Outline) {
-                        button.getOutline(outline)
+                        (button.outlineProvider ?: ViewOutlineProvider.BACKGROUND)
+                            .getOutline(button, outline)
                     }
                 }
             glass.clipToOutline = true
@@ -550,11 +552,10 @@ class PlaybackPanelFragment :
         // and copy the currently rendered radius while the view tree is drawing animation frames.
         // This also covers pressed/focused shape states rather than only the checked state.
         val shapeObserver = root.viewTreeObserver
-        val shapeListener =
-            ViewTreeObserver.OnPreDrawListener {
-                glassByButton.forEach { (button, glass) -> updateGlassShape(button, glass) }
-                true
-            }
+        val shapeListener = ViewTreeObserver.OnPreDrawListener {
+            glassByButton.forEach { (button, glass) -> updateGlassShape(button, glass) }
+            true
+        }
         playbackGlassShapeObserver = shapeObserver
         playbackGlassShapeListener = shapeListener
         shapeObserver.addOnPreDrawListener(shapeListener)
@@ -598,9 +599,7 @@ class PlaybackPanelFragment :
 
     override fun onDestroyBinding(binding: FragmentPlaybackPanelBinding) {
         playbackGlassShapeListener?.let { listener ->
-            playbackGlassShapeObserver
-                ?.takeIf { it.isAlive }
-                ?.removeOnPreDrawListener(listener)
+            playbackGlassShapeObserver?.takeIf { it.isAlive }?.removeOnPreDrawListener(listener)
         }
         playbackGlassShapeListener = null
         playbackGlassShapeObserver = null
