@@ -19,7 +19,6 @@
 package org.oxycblt.auxio.playback.queue
 
 import android.content.Context
-import android.content.res.ColorStateList
 import android.util.AttributeSet
 import android.view.View
 import android.view.WindowInsets
