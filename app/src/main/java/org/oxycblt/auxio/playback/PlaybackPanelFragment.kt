@@ -407,7 +407,7 @@ class PlaybackPanelFragment :
             it.backgroundTintList = toggleFill
         }
         binding.playbackPlayPause.backgroundTintList = playPauseFill
-        binding.playbackPlayPause.iconTintList = ColorStateList.valueOf(Color.WHITE)
+        binding.playbackPlayPause.iconTint = ColorStateList.valueOf(Color.WHITE)
 
         val buttons =
             listOf(
