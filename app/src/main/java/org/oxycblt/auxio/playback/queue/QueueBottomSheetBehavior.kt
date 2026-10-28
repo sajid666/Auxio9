@@ -19,7 +19,6 @@
 package org.oxycblt.auxio.playback.queue
 
 import android.content.Context
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.util.AttributeSet
 import android.view.View
@@ -91,13 +90,11 @@ class QueueBottomSheetBehavior<V : View>(context: Context, attributeSet: Attribu
             // through, so the collapsed sheet feels connected to the Player instead of opaque.
             val surfaceColor = context.getAttrColorCompat(MR.attr.colorSurfaceContainerHigh)
             fillColor =
-                ColorStateList.valueOf(
-                    Color.argb(
-                        188,
-                        Color.red(surfaceColor),
-                        Color.green(surfaceColor),
-                        Color.blue(surfaceColor),
-                    )
+                Color.argb(
+                    188,
+                    Color.red(surfaceColor),
+                    Color.green(surfaceColor),
+                    Color.blue(surfaceColor),
                 )
             if (uiSettings.roundMode) {
                 shapeAppearanceModel =
