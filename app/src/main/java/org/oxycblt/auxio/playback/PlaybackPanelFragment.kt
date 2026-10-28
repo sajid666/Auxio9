@@ -445,10 +445,11 @@ class PlaybackPanelFragment :
                 bevelWidth = 16f
                 refractionHeight = 18f
                 refractionFalloff = 1.0f
-                dispersionStrength = 0.26f
+                dispersionStrength = 0.32f
                 blurAmount = 0.045f
                 saturation = 140f
-                edgeHighlightBorderWidth = 2.5f
+                // Make the refractive rim broad enough to remain visible on bright and dark artwork.
+                edgeHighlightBorderWidth = 5f
                 edgeHighlightOpacity = 100f
                 collectFrameStats = false
                 visibility = View.INVISIBLE
@@ -534,8 +535,8 @@ class PlaybackPanelFragment :
                 val side = minOf(button.width, button.height).toFloat()
                 // Push the bevel and refraction further so the controls share the artwork
                 // frame's more pronounced, liquid edge instead of reading as smooth plastic.
-                glass.bevelWidth = side * 0.40f
-                glass.refractionHeight = side * 0.42f
+                glass.bevelWidth = side * 0.48f
+                glass.refractionHeight = side * 0.48f
                 glass.visibility = View.VISIBLE
                 updateGlassShape(button, glass)
             }
