@@ -24,7 +24,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.RectF
+import android.graphics.Outline
 import android.media.audiofx.AudioEffect
 import android.os.Build
 import android.os.Bundle
@@ -33,6 +33,7 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewOutlineProvider
+import android.view.ViewTreeObserver
 import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -97,6 +98,8 @@ class PlaybackPanelFragment :
     private val queueModel: QueueViewModel by viewModels()
     private var equalizerLauncher: ActivityResultLauncher<Intent>? = null
     private var userAwarePagerCallback: UserAwarePagerCallback? = null
+    private var playbackGlassShapeObserver: ViewTreeObserver? = null
+    private var playbackGlassShapeListener: ViewTreeObserver.OnPreDrawListener? = null
 
     override fun onCreateBinding(inflater: LayoutInflater) =
         FragmentPlaybackPanelBinding.inflate(inflater)
@@ -452,10 +455,40 @@ class PlaybackPanelFragment :
             }
         }
 
-        // Add each lens as a root sibling immediately before the controls container. This avoids
-        // violating ForcedLTRFrameLayout's one-child contract while keeping the real buttons above
-        // the lens in the draw order.
-        glassByButton.values.forEach { glass ->
+        fun updateGlassShape(button: View, glass: PlaybackLiquidGlassOverlay) {
+            if (button.width <= 0 || button.height <= 0) return
+
+            // Read the live drawable outline. Material 3 Expressive animates the rendered
+            // corner sizes inside its background drawable, while shapeAppearanceModel exposes
+            // only the default shape; using the latter misses the actual spring transition.
+            val buttonOutline = Outline()
+            button.getOutline(buttonOutline)
+            val liveRadius = buttonOutline.radius
+            if (liveRadius < 0f) {
+                // The liquid-glass renderer models rounded rectangles, so retain the last
+                // supported radius if Material ever returns a non-round-rect outline.
+                return
+            }
+
+            val radius = liveRadius.coerceIn(0f, minOf(button.width, button.height) / 2f)
+            if (abs(glass.cornerRadius - radius) > 0.25f) {
+                glass.cornerRadius = radius
+                glass.invalidateOutline()
+                glass.invalidate()
+            }
+        }
+
+        // Keep clipping tied to the actual Material button outline, not a separately
+        // approximated round rectangle. The pre-draw listener below refreshes the glass radius
+        // while Material's checked/pressed corner springs are animating.
+        glassByButton.forEach { (button, glass) ->
+            glass.outlineProvider =
+                object : ViewOutlineProvider() {
+                    override fun getOutline(view: View, outline: Outline) {
+                        button.getOutline(outline)
+                    }
+                }
+            glass.clipToOutline = true
             root.addView(
                 glass,
                 root.indexOfChild(controlsSurface),
@@ -493,33 +526,10 @@ class PlaybackPanelFragment :
                 }
 
                 val side = minOf(button.width, button.height).toFloat()
-                // Mirror the MaterialButton's active state shape instead of forcing every lens
-                // into a circle. Auxio's play/pause button morphs between shapes when checked.
-                val buttonBounds =
-                    RectF(0f, 0f, button.width.toFloat(), button.height.toFloat())
-                val cornerRadius =
-                    button.shapeAppearanceModel.topLeftCornerSize
-                        .getCornerSize(buttonBounds)
-                        .coerceIn(0f, side / 2f)
-                glass.cornerRadius = cornerRadius
-                glass.outlineProvider =
-                    object : ViewOutlineProvider() {
-                        override fun getOutline(view: View, outline: android.graphics.Outline) {
-                            val bounds =
-                                RectF(0f, 0f, button.width.toFloat(), button.height.toFloat())
-                            val radius =
-                                button.shapeAppearanceModel.topLeftCornerSize
-                                    .getCornerSize(bounds)
-                                    .coerceIn(0f, minOf(view.width, view.height) / 2f)
-                            outline.setRoundRect(0, 0, view.width, view.height, radius)
-                        }
-                    }
-                glass.clipToOutline = true
                 glass.bevelWidth = side * 0.34f
                 glass.refractionHeight = side * 0.32f
                 glass.visibility = View.VISIBLE
-                glass.invalidateOutline()
-                glass.invalidate()
+                updateGlassShape(button, glass)
             }
         }
 
@@ -528,17 +538,24 @@ class PlaybackPanelFragment :
                 updateGlassBounds()
             }
         }
-        // Checked-state shape changes may not trigger a layout pass, so explicitly refresh
-        // the glass as playback toggles between paused and playing.
-        binding.playbackPlayPause.addOnCheckedChangeListener { button, _ ->
-            button.post { updateGlassBounds() }
-        }
         controlsSurface.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updateGlassBounds()
         }
         root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updateGlassBounds()
         }
+
+        // Material updates state-dependent corner sizes on a spring animation. These updates
+        // invalidate the drawable, not necessarily the button's layout, so observe pre-draws
+        // and copy the currently rendered radius while the view tree is drawing animation frames.
+        // This also covers pressed/focused shape states rather than only the checked state.
+        playbackGlassShapeObserver = root.viewTreeObserver
+        playbackGlassShapeListener =
+            ViewTreeObserver.OnPreDrawListener {
+                glassByButton.forEach { (button, glass) -> updateGlassShape(button, glass) }
+                true
+            }
+        playbackGlassShapeObserver?.addOnPreDrawListener(playbackGlassShapeListener)
         root.post { updateGlassBounds() }
     }
 
@@ -578,6 +595,13 @@ class PlaybackPanelFragment :
     //    }
 
     override fun onDestroyBinding(binding: FragmentPlaybackPanelBinding) {
+        playbackGlassShapeListener?.let { listener ->
+            playbackGlassShapeObserver
+                ?.takeIf { it.isAlive }
+                ?.removeOnPreDrawListener(listener)
+        }
+        playbackGlassShapeListener = null
+        playbackGlassShapeObserver = null
         playerSurfaceBackdrop?.clear()
         playerSurfaceBackdrop = null
         equalizerLauncher = null
