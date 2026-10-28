@@ -24,6 +24,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.RectF
 import android.media.audiofx.AudioEffect
 import android.os.Build
 import android.os.Bundle
@@ -492,23 +493,32 @@ class PlaybackPanelFragment :
                 }
 
                 val side = minOf(button.width, button.height).toFloat()
-                glass.cornerRadius = side / 2f
+                // Mirror the MaterialButton's active state shape instead of forcing every lens
+                // into a circle. Auxio's play/pause button morphs between shapes when checked.
+                val buttonBounds =
+                    RectF(0f, 0f, button.width.toFloat(), button.height.toFloat())
+                val cornerRadius =
+                    button.shapeAppearanceModel.topLeftCornerSize
+                        .getCornerSize(buttonBounds)
+                        .coerceIn(0f, side / 2f)
+                glass.cornerRadius = cornerRadius
                 glass.outlineProvider =
                     object : ViewOutlineProvider() {
                         override fun getOutline(view: View, outline: android.graphics.Outline) {
-                            outline.setRoundRect(
-                                0,
-                                0,
-                                view.width,
-                                view.height,
-                                minOf(view.width, view.height) / 2f,
-                            )
+                            val bounds =
+                                RectF(0f, 0f, button.width.toFloat(), button.height.toFloat())
+                            val radius =
+                                button.shapeAppearanceModel.topLeftCornerSize
+                                    .getCornerSize(bounds)
+                                    .coerceIn(0f, minOf(view.width, view.height) / 2f)
+                            outline.setRoundRect(0, 0, view.width, view.height, radius)
                         }
                     }
                 glass.clipToOutline = true
                 glass.bevelWidth = side * 0.34f
                 glass.refractionHeight = side * 0.32f
                 glass.visibility = View.VISIBLE
+                glass.invalidateOutline()
                 glass.invalidate()
             }
         }
@@ -517,6 +527,11 @@ class PlaybackPanelFragment :
             button.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
                 updateGlassBounds()
             }
+        }
+        // Checked-state shape changes may not trigger a layout pass, so explicitly refresh
+        // the glass as playback toggles between paused and playing.
+        binding.playbackPlayPause.addOnCheckedChangeListener { button, _ ->
+            button.post { updateGlassBounds() }
         }
         controlsSurface.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updateGlassBounds()
