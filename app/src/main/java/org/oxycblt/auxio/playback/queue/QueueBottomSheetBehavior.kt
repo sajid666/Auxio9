@@ -19,6 +19,8 @@
 package org.oxycblt.auxio.playback.queue
 
 import android.content.Context
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.util.AttributeSet
 import android.view.View
 import android.view.WindowInsets
@@ -85,8 +87,18 @@ class QueueBottomSheetBehavior<V : View>(context: Context, attributeSet: Attribu
 
     override fun createBackground(context: Context, uiSettings: UISettings) =
         MaterialShapeDrawable.createWithElevationOverlay(context).apply {
-            // The queue sheet's background is a static elevated background.
-            fillColor = context.getAttrColorCompat(MR.attr.colorSurfaceContainerHigh)
+            // Keep the queue legible while letting the already-blurred artwork backdrop show
+            // through, so the collapsed sheet feels connected to the Player instead of opaque.
+            val surfaceColor = context.getAttrColorCompat(MR.attr.colorSurfaceContainerHigh)
+            fillColor =
+                ColorStateList.valueOf(
+                    Color.argb(
+                        188,
+                        Color.red(surfaceColor),
+                        Color.green(surfaceColor),
+                        Color.blue(surfaceColor),
+                    )
+                )
             if (uiSettings.roundMode) {
                 shapeAppearanceModel =
                     ShapeAppearanceModel.builder(
