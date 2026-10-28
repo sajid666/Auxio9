@@ -32,9 +32,9 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.ViewTreeObserver
-import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.Toolbar
@@ -549,13 +549,15 @@ class PlaybackPanelFragment :
         // invalidate the drawable, not necessarily the button's layout, so observe pre-draws
         // and copy the currently rendered radius while the view tree is drawing animation frames.
         // This also covers pressed/focused shape states rather than only the checked state.
-        playbackGlassShapeObserver = root.viewTreeObserver
-        playbackGlassShapeListener =
+        val shapeObserver = root.viewTreeObserver
+        val shapeListener =
             ViewTreeObserver.OnPreDrawListener {
                 glassByButton.forEach { (button, glass) -> updateGlassShape(button, glass) }
                 true
             }
-        playbackGlassShapeObserver?.addOnPreDrawListener(playbackGlassShapeListener)
+        playbackGlassShapeObserver = shapeObserver
+        playbackGlassShapeListener = shapeListener
+        shapeObserver.addOnPreDrawListener(shapeListener)
         root.post { updateGlassBounds() }
     }
 
