@@ -462,8 +462,10 @@ class PlaybackPanelFragment :
             // corner sizes inside its background drawable, while shapeAppearanceModel exposes
             // only the default shape; using the latter misses the actual spring transition.
             val buttonOutline = Outline()
-            (button.outlineProvider ?: ViewOutlineProvider.BACKGROUND)
-                .getOutline(button, buttonOutline)
+            (button.outlineProvider ?: ViewOutlineProvider.BACKGROUND).getOutline(
+                button,
+                buttonOutline,
+            )
             val liveRadius = buttonOutline.radius
             if (liveRadius < 0f) {
                 // The liquid-glass renderer models rounded rectangles, so retain the last
@@ -486,8 +488,10 @@ class PlaybackPanelFragment :
             glass.outlineProvider =
                 object : ViewOutlineProvider() {
                     override fun getOutline(view: View, outline: Outline) {
-                        (button.outlineProvider ?: ViewOutlineProvider.BACKGROUND)
-                            .getOutline(button, outline)
+                        (button.outlineProvider ?: ViewOutlineProvider.BACKGROUND).getOutline(
+                            button,
+                            outline,
+                        )
                     }
                 }
             glass.clipToOutline = true
