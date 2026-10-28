@@ -396,11 +396,9 @@ class PlaybackPanelFragment :
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
                 intArrayOf(tint(primary, 72), tint(Color.WHITE, 26)),
             )
-        val playPauseFill =
-            ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(tint(primary, 100), tint(Color.WHITE, 40)),
-            )
+        // Keep play/pause visually neutral in both states so the glass lens, rather than
+        // the checked-state primary color, defines the button surface.
+        val playPauseFill = ColorStateList.valueOf(tint(Color.WHITE, 26))
 
         listOf(binding.playbackSkipPrev, binding.playbackSkipNext).forEach {
             it.backgroundTintList = neutralFill
