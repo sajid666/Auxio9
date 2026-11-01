@@ -500,12 +500,13 @@ class PlaybackPanelFragment :
                 glass,
                 root.indexOfChild(controlsSurface),
                 ConstraintLayout.LayoutParams(
-                    1,
-                    1,
-                ).apply {
-                    leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID
-                    topToTop = ConstraintLayout.LayoutParams.PARENT_ID
-                },
+                        1,
+                        1,
+                    )
+                    .apply {
+                        leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID
+                        topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+                    },
             )
         }
 
