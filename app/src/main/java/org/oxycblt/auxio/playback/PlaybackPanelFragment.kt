@@ -33,6 +33,7 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.view.ViewOutlineProvider
 import android.view.ViewTreeObserver
 import androidx.activity.result.ActivityResultLauncher
@@ -49,6 +50,7 @@ import com.example.liquidglass.LiquidGlassView
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlin.math.abs
+import org.oxycblt.auxio.BuildConfig
 import org.oxycblt.auxio.R
 import org.oxycblt.auxio.databinding.FragmentPlaybackPanelBinding
 import org.oxycblt.auxio.detail.DetailViewModel
@@ -91,6 +93,10 @@ class PlaybackPanelFragment :
     @Inject lateinit var imageLoader: ImageLoader
 
     private var playerSurfaceBackdrop: ArtworkAmbientBackdrop? = null
+    private var playerArtworkGlass: PlaybackLiquidGlassOverlay? = null
+    private var glassDiagnosticView: TextView? = null
+    private var glassDiagnosticObserver: ViewTreeObserver? = null
+    private var glassDiagnosticListener: ViewTreeObserver.OnPreDrawListener? = null
     private val coverPagerAdapter = CoverPagerAdapter(this)
     private val playbackModel: PlaybackViewModel by activityViewModels()
     private val detailModel: DetailViewModel by activityViewModels()
@@ -163,6 +169,7 @@ class PlaybackPanelFragment :
         installArtworkAmbientBackdrop(binding)
         installPlaybackGlassOverlay(binding)
         installPlayerSurfaceGlass(binding)
+        installGlassRendererDiagnostic(binding)
 
         // Set up fast seek overlay
         binding.playbackSong.apply {
@@ -296,6 +303,94 @@ class PlaybackPanelFragment :
         glass.elevation = binding.playbackPager.elevation + 2f * density
         binding.root.addView(glass, params)
         glass.bringToFront()
+        playerArtworkGlass = glass
+    }
+
+    /**
+     * Debug-only readout of the library's real AGSL renderer state.
+     *
+     * The library does not expose this state publicly. Its private renderer is created only
+     * after the API/hardware/path checks pass; isAvailable becomes false if AGSL compilation
+     * or effect construction fails and the view falls back to the classic renderer.
+     */
+    private fun installGlassRendererDiagnostic(binding: FragmentPlaybackPanelBinding) {
+        if (!BuildConfig.DEBUG) return
+
+        val glass = playerArtworkGlass ?: return
+        val density = resources.displayMetrics.density
+        val diagnostic =
+            TextView(requireContext()).apply {
+                setTextColor(Color.WHITE)
+                textSize = 11f
+                setPadding(10, 6, 10, 6)
+                setBackgroundColor(Color.argb(220, 0, 0, 0))
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                isClickable = false
+                text = "Liquid Glass diagnostic: checking renderer…"
+            }
+        val params =
+            ConstraintLayout.LayoutParams(
+                ConstraintLayout.LayoutParams.WRAP_CONTENT,
+                ConstraintLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                startToStart = ConstraintLayout.LayoutParams.PARENT_ID
+                topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+                marginStart = (12f * density).toInt()
+                topMargin = (72f * density).toInt()
+            }
+        binding.root.addView(diagnostic, params)
+        diagnostic.bringToFront()
+        glassDiagnosticView = diagnostic
+
+        val observer = binding.root.viewTreeObserver
+        val listener =
+            ViewTreeObserver.OnPreDrawListener {
+                val status =
+                    when {
+                        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ->
+                            "Classic renderer (Android API below 33)"
+                        !glass.isHardwareAccelerated ->
+                            "Classic fallback (hardware acceleration unavailable)"
+                        !glass.useShaderPipeline || !glass.useHardwareBlurWhenPossible ->
+                            "Classic fallback (shader pipeline disabled)"
+                        else -> {
+                            try {
+                                val field =
+                                    LiquidGlassView::class.java.getDeclaredField("lensRenderer")
+                                field.isAccessible = true
+                                val renderer = field.get(glass)
+                                if (renderer == null) {
+                                    "AGSL: waiting for first render"
+                                } else {
+                                    val available =
+                                        renderer.javaClass.getMethod("isAvailable").invoke(renderer)
+                                            as Boolean
+                                    if (available) {
+                                        "AGSL renderer initialized · no shader failure detected"
+                                    } else {
+                                        "AGSL failed · classic fallback active"
+                                    }
+                                }
+                            } catch (error: Exception) {
+                                L.e(error, "Unable to read Liquid Glass renderer diagnostic")
+                                "Renderer status unavailable (diagnostic read failed)"
+                            }
+                        }
+                    }
+                diagnostic.text = "API ${Build.VERSION.SDK_INT} · $status"
+                if (!status.startsWith("AGSL: waiting")) {
+                    glassDiagnosticListener?.let { current ->
+                        glassDiagnosticObserver?.takeIf { it.isAlive }
+                            ?.removeOnPreDrawListener(current)
+                    }
+                    glassDiagnosticListener = null
+                    glassDiagnosticObserver = null
+                }
+                true
+            }
+        glassDiagnosticObserver = observer
+        glassDiagnosticListener = listener
+        observer.addOnPreDrawListener(listener)
     }
 
     /**
@@ -605,6 +700,14 @@ class PlaybackPanelFragment :
     //    }
 
     override fun onDestroyBinding(binding: FragmentPlaybackPanelBinding) {
+        glassDiagnosticListener?.let { listener ->
+            glassDiagnosticObserver?.takeIf { it.isAlive }?.removeOnPreDrawListener(listener)
+        }
+        glassDiagnosticListener = null
+        glassDiagnosticObserver = null
+        glassDiagnosticView?.let { view -> (view.parent as? ViewGroup)?.removeView(view) }
+        glassDiagnosticView = null
+        playerArtworkGlass = null
         playbackGlassShapeListener?.let { listener ->
             playbackGlassShapeObserver?.takeIf { it.isAlive }?.removeOnPreDrawListener(listener)
         }
