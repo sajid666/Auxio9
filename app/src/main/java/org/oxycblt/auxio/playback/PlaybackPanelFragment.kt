@@ -407,6 +407,8 @@ class PlaybackPanelFragment :
         }
         listOf(binding.playbackRepeat, binding.playbackShuffle).forEach {
             it.backgroundTintList = toggleFill
+            // The AGSL lens supplies the reflective rim; remove the extra Material outline.
+            it.strokeColor = ColorStateList.valueOf(Color.TRANSPARENT)
         }
         binding.playbackPlayPause.backgroundTintList = playPauseFill
         binding.playbackPlayPause.iconTint = ColorStateList.valueOf(Color.WHITE)
@@ -419,40 +421,40 @@ class PlaybackPanelFragment :
                 binding.playbackSkipNext,
                 binding.playbackShuffle,
             )
-        val glassByButton =
-            buttons.associateWith { _ ->
-                PlaybackLiquidGlassOverlay(requireContext()).apply {
-                    id = View.generateViewId()
-                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                    isClickable = false
-                    isFocusable = false
-                    enablePressEffect = false
-                    // Leave backdropSource unset: LiquidGlassView then samples the direct parent,
-                    // including the real artwork/background behind these root-level lenses.
-                    enableDynamicBackground = true
-                    enableBackdropBlur = true
-                    enableChromaticAberration = false
-                    enableChromaticDispersion = true
-                    enableEdgeHighlight = true
-                    enableSensorHighlight = true
-                    enableAdaptiveTint = false
-                    material = GlassMaterial.CLEAR
-                    // Bounds are set to the live button size below; these initial values keep
-                    // the glass geometry valid before the first layout pass.
-                    cornerRadius = 24f
-                    bevelWidth = 16f
-                    refractionHeight = 18f
-                    refractionFalloff = 1.0f
-                    dispersionStrength = 0.32f
-                    blurAmount = 0.045f
-                    saturation = 140f
-                    // Make the refractive rim broad enough to remain visible on bright and dark artwork.
-                    edgeHighlightBorderWidth = 5f
-                    edgeHighlightOpacity = 100f
-                    collectFrameStats = false
-                    visibility = View.INVISIBLE
-                }
+        val glassByButton = buttons.associateWith { _ ->
+            PlaybackLiquidGlassOverlay(requireContext()).apply {
+                id = View.generateViewId()
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                isClickable = false
+                isFocusable = false
+                enablePressEffect = false
+                // Leave backdropSource unset: LiquidGlassView then samples the direct parent,
+                // including the real artwork/background behind these root-level lenses.
+                enableDynamicBackground = true
+                enableBackdropBlur = true
+                enableChromaticAberration = false
+                enableChromaticDispersion = true
+                enableEdgeHighlight = true
+                enableSensorHighlight = true
+                enableAdaptiveTint = false
+                material = GlassMaterial.CLEAR
+                // Bounds are set to the live button size below; these initial values keep
+                // the glass geometry valid before the first layout pass.
+                cornerRadius = 24f
+                bevelWidth = 16f
+                refractionHeight = 18f
+                refractionFalloff = 1.6f
+                edgeSoftness = 3f
+                dispersionStrength = 0.20f
+                blurAmount = 0.045f
+                saturation = 140f
+                // This is used by the classic renderer only; AGSL draws its own specular rim.
+                edgeHighlightBorderWidth = 5f
+                edgeHighlightOpacity = 100f
+                collectFrameStats = false
+                visibility = View.INVISIBLE
             }
+        }
 
         fun updateGlassShape(button: View, glass: PlaybackLiquidGlassOverlay) {
             if (button.width <= 0 || button.height <= 0) return
