@@ -300,7 +300,8 @@ class PlaybackPanelFragment :
         playerArtworkGlass = glass
     }
 
- In the stacked portrait layout,
+    /**
+     * Extend the liquid material to the song metadata and controls. In the stacked portrait layout,
      * use one shared lens across metadata, seek bar, and controls so their glass edges do not
      * appear as separate cards. Keep separate lenses in the side-by-side layout.
      */
@@ -421,34 +422,34 @@ class PlaybackPanelFragment :
         val glassByButton =
             buttons.associateWith { _ ->
                 PlaybackLiquidGlassOverlay(requireContext()).apply {
-                id = View.generateViewId()
-                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                isClickable = false
-                isFocusable = false
-                enablePressEffect = false
-                // Leave backdropSource unset: LiquidGlassView then samples the direct parent,
-                // including the real artwork/background behind these root-level lenses.
-                enableDynamicBackground = true
-                enableBackdropBlur = true
-                enableChromaticAberration = false
-                enableChromaticDispersion = true
-                enableEdgeHighlight = true
-                enableSensorHighlight = true
-                enableAdaptiveTint = false
-                material = GlassMaterial.CLEAR
-                // Bounds are set to the live button size below; these initial values keep
-                // the glass geometry valid before the first layout pass.
-                cornerRadius = 24f
-                bevelWidth = 16f
-                refractionHeight = 18f
-                refractionFalloff = 1.0f
-                dispersionStrength = 0.32f
-                blurAmount = 0.045f
-                saturation = 140f
-                // Make the refractive rim broad enough to remain visible on bright and dark artwork.
-                edgeHighlightBorderWidth = 5f
-                edgeHighlightOpacity = 100f
-                collectFrameStats = false
+                    id = View.generateViewId()
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                    isClickable = false
+                    isFocusable = false
+                    enablePressEffect = false
+                    // Leave backdropSource unset: LiquidGlassView then samples the direct parent,
+                    // including the real artwork/background behind these root-level lenses.
+                    enableDynamicBackground = true
+                    enableBackdropBlur = true
+                    enableChromaticAberration = false
+                    enableChromaticDispersion = true
+                    enableEdgeHighlight = true
+                    enableSensorHighlight = true
+                    enableAdaptiveTint = false
+                    material = GlassMaterial.CLEAR
+                    // Bounds are set to the live button size below; these initial values keep
+                    // the glass geometry valid before the first layout pass.
+                    cornerRadius = 24f
+                    bevelWidth = 16f
+                    refractionHeight = 18f
+                    refractionFalloff = 1.0f
+                    dispersionStrength = 0.32f
+                    blurAmount = 0.045f
+                    saturation = 140f
+                    // Make the refractive rim broad enough to remain visible on bright and dark artwork.
+                    edgeHighlightBorderWidth = 5f
+                    edgeHighlightOpacity = 100f
+                    collectFrameStats = false
                     visibility = View.INVISIBLE
                 }
             }
