@@ -603,7 +603,7 @@ class PlaybackPanelFragment :
     //    }
 
     override fun onDestroyBinding(binding: FragmentPlaybackPanelBinding) {
-
+        playbackGlassShapeListener?.let { listener ->
             playbackGlassShapeObserver?.takeIf { it.isAlive }?.removeOnPreDrawListener(listener)
         }
         playbackGlassShapeListener = null
