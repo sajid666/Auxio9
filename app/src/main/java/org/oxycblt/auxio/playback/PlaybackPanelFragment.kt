@@ -613,7 +613,9 @@ class PlaybackPanelFragment :
         // This also covers pressed/focused shape states rather than only the checked state.
         val shapeObserver = root.viewTreeObserver
         val shapeListener = ViewTreeObserver.OnPreDrawListener {
-            glassByButton.forEach { (button, glass) -> updateGlassShape(button, glass) }
+            glassByButton.forEach { (button, glass) ->
+                updateGlassShape(button, glass, highlightsByButton[button])
+            }
             true
         }
         playbackGlassShapeObserver = shapeObserver
