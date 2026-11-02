@@ -528,13 +528,11 @@ class PlaybackPanelFragment :
             highlightsByButton[button]?.let { highlight ->
                 highlight.outlineProvider = buttonOutlineProvider
                 highlight.clipToOutline = true
-                // Draw reflections above the native button fill; keeping this below the
-                // controlsSurface would let the Material button cover the custom shader.
-                highlight.elevation =
-                    controlsSurface.elevation + 4f * root.resources.displayMetrics.density
+                // Keep the reflection below the Material controls so icons and state
+                // indicators remain the topmost, fully legible layer.
                 root.addView(
                     highlight,
-                    root.indexOfChild(controlsSurface) + 1,
+                    root.indexOfChild(controlsSurface),
                     ConstraintLayout.LayoutParams(
                             1,
                             1,
