@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
+ 
 package org.oxycblt.auxio.playback
 
 import android.content.Context
@@ -92,7 +92,8 @@ internal class PlaybackButtonGlassHighlightView(context: Context) : View(context
                     float3 reflection = mix(cool, warm, warmMix);
                     return half4(half3(reflection), half(alpha));
                 }
-                """.trimIndent()
+                """
+                    .trimIndent()
             )
         } else {
             null
