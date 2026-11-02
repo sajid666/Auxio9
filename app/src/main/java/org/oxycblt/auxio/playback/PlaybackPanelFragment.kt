@@ -443,14 +443,18 @@ class PlaybackPanelFragment :
                 cornerRadius = 24f
                 bevelWidth = 16f
                 refractionHeight = 18f
-                refractionFalloff = 1.6f
-                edgeSoftness = 3f
-                dispersionStrength = 0.20f
+                // Spread refraction across more of the bevel instead of concentrating it
+                // into a narrow edge ring; soften the transition for a thicker glass read.
+                refractionFalloff = 0.6f
+                edgeSoftness = 6f
+                // Keep dispersion restrained so the rim reads as glass, not a neon outline.
+                dispersionStrength = 0.12f
                 blurAmount = 0.045f
                 saturation = 140f
                 // This is used by the classic renderer only; AGSL draws its own specular rim.
                 edgeHighlightBorderWidth = 5f
-                edgeHighlightOpacity = 100f
+                // Slightly lower the AGSL specular peak to avoid a hard illuminated stroke.
+                edgeHighlightOpacity = 85f
                 collectFrameStats = false
                 visibility = View.INVISIBLE
             }
