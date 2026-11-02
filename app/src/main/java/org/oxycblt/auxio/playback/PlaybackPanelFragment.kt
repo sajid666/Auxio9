@@ -271,8 +271,10 @@ class PlaybackPanelFragment :
                 enableBackdropBlur = true
                 enableChromaticAberration = false
                 enableChromaticDispersion = true
-                enableEdgeHighlight = true
-                enableSensorHighlight = true
+                // The dedicated AGSL overlay below supplies the broad glass reflections; disable
+                // the dependency's narrow specular rim so it cannot read as a neon outline.
+                enableEdgeHighlight = false
+                enableSensorHighlight = false
                 enableAdaptiveTint = false
                 material = GlassMaterial.CLEAR
                 cornerRadius = 30f * density
@@ -448,13 +450,9 @@ class PlaybackPanelFragment :
                 refractionFalloff = 0.6f
                 edgeSoftness = 6f
                 // Keep dispersion restrained so the rim reads as glass, not a neon outline.
-                dispersionStrength = 0.12f
+                dispersionStrength = 0.06f
                 blurAmount = 0.045f
                 saturation = 140f
-                // This is used by the classic renderer only; AGSL draws its own specular rim.
-                edgeHighlightBorderWidth = 5f
-                // Slightly lower the AGSL specular peak to avoid a hard illuminated stroke.
-                edgeHighlightOpacity = 85f
                 collectFrameStats = false
                 visibility = View.INVISIBLE
             }
