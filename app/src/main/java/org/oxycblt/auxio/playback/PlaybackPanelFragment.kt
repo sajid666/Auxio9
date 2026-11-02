@@ -332,8 +332,9 @@ class PlaybackPanelFragment :
                 enableBackdropBlur = true
                 enableChromaticAberration = false
                 enableChromaticDispersion = true
-                enableEdgeHighlight = true
-                enableSensorHighlight = true
+                // The custom AGSL pass below supplies the button reflections and rim.
+                enableEdgeHighlight = false
+                enableSensorHighlight = false
                 enableAdaptiveTint = false
                 material = GlassMaterial.CLEAR
                 cornerRadius = 28f * density
@@ -527,9 +528,12 @@ class PlaybackPanelFragment :
             highlightsByButton[button]?.let { highlight ->
                 highlight.outlineProvider = buttonOutlineProvider
                 highlight.clipToOutline = true
+                // Draw reflections above the native button fill; keeping this below the
+                // controlsSurface would let the Material button cover the custom shader.
+                highlight.elevation = controlsSurface.elevation + 4f * density
                 root.addView(
                     highlight,
-                    root.indexOfChild(controlsSurface),
+                    root.indexOfChild(controlsSurface) + 1,
                     ConstraintLayout.LayoutParams(
                             1,
                             1,
