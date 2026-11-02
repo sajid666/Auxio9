@@ -460,7 +460,18 @@ class PlaybackPanelFragment :
             }
         }
 
-        fun updateGlassShape(button: View, glass: PlaybackLiquidGlassOverlay) {
+        val highlightsByButton =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                buttons.associateWith { PlaybackButtonGlassHighlightView(requireContext()) }
+            } else {
+                emptyMap()
+            }
+
+        fun updateGlassShape(
+            button: View,
+            glass: PlaybackLiquidGlassOverlay,
+            highlight: PlaybackButtonGlassHighlightView?,
+        ) {
             if (button.width <= 0 || button.height <= 0) return
 
             // Read the live drawable outline. Material 3 Expressive animates the rendered
@@ -484,13 +495,14 @@ class PlaybackPanelFragment :
                 glass.invalidateOutline()
                 glass.invalidate()
             }
+            highlight?.setCornerRadius(radius)
         }
 
         // Keep clipping tied to the actual Material button outline, not a separately
         // approximated round rectangle. The pre-draw listener below refreshes the glass radius
         // while Material's checked/pressed corner springs are animating.
         glassByButton.forEach { (button, glass) ->
-            glass.outlineProvider =
+            val buttonOutlineProvider =
                 object : ViewOutlineProvider() {
                     override fun getOutline(view: View, outline: Outline) {
                         (button.outlineProvider ?: ViewOutlineProvider.BACKGROUND).getOutline(
@@ -499,6 +511,7 @@ class PlaybackPanelFragment :
                         )
                     }
                 }
+            glass.outlineProvider = buttonOutlineProvider
             glass.clipToOutline = true
             root.addView(
                 glass,
@@ -512,6 +525,23 @@ class PlaybackPanelFragment :
                         topToTop = ConstraintLayout.LayoutParams.PARENT_ID
                     },
             )
+
+            highlightsByButton[button]?.let { highlight ->
+                highlight.outlineProvider = buttonOutlineProvider
+                highlight.clipToOutline = true
+                root.addView(
+                    highlight,
+                    root.indexOfChild(controlsSurface),
+                    ConstraintLayout.LayoutParams(
+                            1,
+                            1,
+                        )
+                        .apply {
+                            leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID
+                            topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+                        },
+                )
+            }
         }
 
         fun updateGlassBounds() {
@@ -541,12 +571,29 @@ class PlaybackPanelFragment :
                 }
 
                 val side = minOf(button.width, button.height).toFloat()
-                // Push the bevel and refraction further so the controls share the artwork
-                // frame's more pronounced, liquid edge instead of reading as smooth plastic.
+                // The dependency supplies backdrop refraction; a separate AGSL pass adds the
+                // broad curved reflections its narrow built-in rim cannot produce.
                 glass.bevelWidth = side * 0.48f
                 glass.refractionHeight = side * 0.48f
                 glass.visibility = View.VISIBLE
-                updateGlassShape(button, glass)
+                val highlight = highlightsByButton[button]
+                if (highlight != null) {
+                    val highlightParams = highlight.layoutParams as ConstraintLayout.LayoutParams
+                    if (
+                        highlightParams.width != button.width ||
+                            highlightParams.height != button.height ||
+                            highlightParams.leftMargin != left ||
+                            highlightParams.topMargin != top
+                    ) {
+                        highlightParams.width = button.width
+                        highlightParams.height = button.height
+                        highlightParams.leftMargin = left
+                        highlightParams.topMargin = top
+                        root.updateViewLayout(highlight, highlightParams)
+                    }
+                    highlight.visibility = View.VISIBLE
+                }
+                updateGlassShape(button, glass, highlight)
             }
         }
 
