@@ -24,6 +24,7 @@ import android.graphics.Paint
 import android.graphics.RuntimeShader
 import android.os.Build
 import android.view.View
+import kotlin.math.abs
 
 /**
  * Adds broad, curved specular reflections over a playback-button LiquidGlassView.
@@ -34,6 +35,7 @@ import android.view.View
  */
 internal class PlaybackButtonGlassHighlightView(context: Context) : View(context) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private var lastCornerRadiusPx = Float.NaN
     private val shader: RuntimeShader? =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             RuntimeShader(
@@ -90,7 +92,8 @@ internal class PlaybackButtonGlassHighlightView(context: Context) : View(context
                     float3 warm = float3(1.0, 0.88, 0.72);
                     float warmMix = clamp(lowerArc * 0.55 + (1.0 - uv.y) * 0.08, 0.0, 0.42);
                     float3 reflection = mix(cool, warm, warmMix);
-                    return half4(half3(reflection), half(alpha));
+                    // AGSL output is premultiplied-alpha; transparent pixels must contribute no RGB.
+                    return half4(half3(reflection * alpha), half(alpha));
                 }
                 """
                     .trimIndent()
@@ -107,6 +110,8 @@ internal class PlaybackButtonGlassHighlightView(context: Context) : View(context
     }
 
     fun setCornerRadius(radiusPx: Float) {
+        if (abs(radiusPx - lastCornerRadiusPx) <= 0.25f) return
+        lastCornerRadiusPx = radiusPx
         shader?.setFloatUniform("radius", radiusPx)
         invalidate()
     }
