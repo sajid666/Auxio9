@@ -444,7 +444,7 @@ class PlaybackPanelFragment :
                 // Bounds are set to the live button size below; these initial values keep
                 // the glass geometry valid before the first layout pass.
                 cornerRadius = 24f
-                // A wider bevel and taller refraction give the button a rounded, solid-glass profile.
+                // A wider bevel and taller refraction create a thicker glass profile.
                 bevelWidth = 22f
                 refractionHeight = 26f
                 refractionFalloff = 0.75f
