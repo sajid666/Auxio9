@@ -24,6 +24,7 @@ import android.graphics.Paint
 import android.graphics.RuntimeShader
 import android.os.Build
 import android.view.View
+import androidx.annotation.RequiresApi
 import kotlin.math.abs
 
 /**
@@ -59,34 +60,40 @@ internal class PlaybackButtonGlassHighlightView(context: Context) : View(context
                         min(radius, min(safeSize.x, safeSize.y) * 0.5)
                     );
 
-                    // A broad upper reflection, gently curved rather than a second outline.
-                    float curveY = 0.16 + 0.11 * pow((uv.x - 0.34) * 1.55, 2.0);
-                    float upperArc = exp(-pow((uv.y - curveY) / 0.055, 2.0));
-                    upperArc *= smoothstep(0.02, 0.16, uv.x);
-                    upperArc *= 1.0 - smoothstep(0.70, 0.88, uv.x);
+                    // Broad, curved upper reflection creates a visible convex glass surface.
+                    float curveY = 0.145 + 0.12 * pow((uv.x - 0.34) * 1.55, 2.0);
+                    float upperArc = exp(-pow((uv.y - curveY) / 0.078, 2.0));
+                    upperArc *= smoothstep(0.02, 0.15, uv.x);
+                    upperArc *= 1.0 - smoothstep(0.72, 0.90, uv.x);
 
-                    // A soft side reflection gives the rounded edge visible volume.
+                    // A wider, dimmer shoulder gives the main highlight a glassy falloff.
+                    float shoulder = exp(-pow((uv.y - (curveY + 0.085)) / 0.14, 2.0));
+                    shoulder *= smoothstep(0.06, 0.20, uv.x);
+                    shoulder *= 1.0 - smoothstep(0.68, 0.90, uv.x);
+
+                    // Side reflections reinforce the rounded thickness without drawing a hard line.
                     float sideX = 0.075 + 0.035 * sin(uv.y * 3.2);
-                    float sideArc = exp(-pow((uv.x - sideX) / 0.035, 2.0));
+                    float sideArc = exp(-pow((uv.x - sideX) / 0.048, 2.0));
                     sideArc *= smoothstep(0.08, 0.24, uv.y);
                     sideArc *= 1.0 - smoothstep(0.72, 0.94, uv.y);
 
-                    // A restrained lower-right reflection balances the upper highlight.
-                    float lowerCurve = 0.88 - 0.07 * pow((uv.x - 0.76) * 1.5, 2.0);
-                    float lowerArc = exp(-pow((uv.y - lowerCurve) / 0.045, 2.0));
-                    lowerArc *= smoothstep(0.54, 0.76, uv.x);
+                    // A fuller lower-right reflection balances the upper glass highlight.
+                    float lowerCurve = 0.86 - 0.07 * pow((uv.x - 0.76) * 1.5, 2.0);
+                    float lowerArc = exp(-pow((uv.y - lowerCurve) / 0.068, 2.0));
+                    lowerArc *= smoothstep(0.52, 0.74, uv.x);
 
-                    // Keep the reflective rim broad and soft; the lens shader handles refraction.
-                    float rim = exp(-abs(d) / 5.5);
+                    // A soft, wider inner bevel reads as glass thickness rather than an outline.
+                    float rim = exp(-abs(d) / 9.0);
                     float rimTopLeft = smoothstep(-0.15, 0.85, -uv.y + uv.x * 0.28);
-                    float rimAlpha = rim * (0.12 + 0.13 * rimTopLeft);
+                    float rimAlpha = rim * (0.17 + 0.18 * rimTopLeft);
 
-                    float alpha = upperArc * 0.27 +
-                        sideArc * 0.13 +
-                        lowerArc * 0.12 +
+                    float alpha = upperArc * 0.36 +
+                        shoulder * 0.10 +
+                        sideArc * 0.18 +
+                        lowerArc * 0.17 +
                         rimAlpha;
-                    alpha *= 1.0 - smoothstep(0.0, 2.0, d);
-                    alpha = clamp(alpha, 0.0, 0.38);
+                    alpha *= 1.0 - smoothstep(0.0, 3.0, d);
+                    alpha = clamp(alpha, 0.0, 0.46);
 
                     float3 cool = float3(0.72, 0.88, 1.0);
                     float3 warm = float3(1.0, 0.88, 0.72);
@@ -112,7 +119,9 @@ internal class PlaybackButtonGlassHighlightView(context: Context) : View(context
     fun setCornerRadius(radiusPx: Float) {
         if (abs(radiusPx - lastCornerRadiusPx) <= 0.25f) return
         lastCornerRadiusPx = radiusPx
-        shader?.setFloatUniform("radius", radiusPx)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            shader?.let { updateShaderRadius(it, radiusPx) }
+        }
         invalidate()
     }
 
@@ -120,7 +129,18 @@ internal class PlaybackButtonGlassHighlightView(context: Context) : View(context
         super.onDraw(canvas)
         val activeShader = shader ?: return
         if (!canvas.isHardwareAccelerated || width <= 0 || height <= 0) return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
 
+        drawShader(canvas, activeShader)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun updateShaderRadius(activeShader: RuntimeShader, radiusPx: Float) {
+        activeShader.setFloatUniform("radius", radiusPx)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun drawShader(canvas: Canvas, activeShader: RuntimeShader) {
         activeShader.setFloatUniform("size", width.toFloat(), height.toFloat())
         paint.shader = activeShader
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)

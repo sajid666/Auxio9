@@ -395,11 +395,11 @@ class PlaybackPanelFragment :
                 Color.blue(color),
             )
 
-        val neutralFill = ColorStateList.valueOf(tint(Color.WHITE, 26))
+        val neutralFill = ColorStateList.valueOf(tint(Color.WHITE, 20))
         val toggleFill =
             ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(tint(primary, 72), tint(Color.WHITE, 26)),
+                intArrayOf(tint(primary, 48), tint(Color.WHITE, 20)),
             )
         // Keep play/pause visually neutral in both states so the glass lens, rather than
         // the checked-state primary color, defines the button surface.
@@ -444,16 +444,15 @@ class PlaybackPanelFragment :
                 // Bounds are set to the live button size below; these initial values keep
                 // the glass geometry valid before the first layout pass.
                 cornerRadius = 24f
-                bevelWidth = 16f
-                refractionHeight = 18f
-                // Spread refraction across more of the bevel instead of concentrating it
-                // into a narrow edge ring; soften the transition for a thicker glass read.
-                refractionFalloff = 0.6f
-                edgeSoftness = 6f
-                // Keep dispersion restrained so the rim reads as glass, not a neon outline.
-                dispersionStrength = 0.06f
-                blurAmount = 0.045f
-                saturation = 140f
+                // A wider bevel and taller refraction give the button a rounded, solid-glass profile.
+                bevelWidth = 22f
+                refractionHeight = 26f
+                refractionFalloff = 0.75f
+                edgeSoftness = 8f
+                // Add restrained color separation to the thicker bevel without a neon rim.
+                dispersionStrength = 0.085f
+                blurAmount = 0.035f
+                saturation = 145f
                 collectFrameStats = false
                 visibility = View.INVISIBLE
             }
